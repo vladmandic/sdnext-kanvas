@@ -2,11 +2,16 @@
   --kanvas-font: 'NotoSans';
 }
 
-.kanvas { width: 100%; height: 100%; margin: auto; }
+.kanvas { width: 100%; height: 100%; min-height: 128px; min-width: 128px; margin: auto; }
 .kanvas-wrapper { width: fit-content; height: fit-content; font-family: var(--kanvas-font); width: 100%; height: 100%; min-height: 100%; }
 .kanvas-toolbar { font-size: var(--kanvas-size); line-height: calc(2 * var(--kanvas-size)); vertical-align: middle; opacity: 0%; background-color: black; min-width: 100%; position: sticky; top: 0; left:0; z-index:1; }
 .kanvas-toolbar.active { opacity: 100%; transition: opacity,background-color 0.2s ease-in; background-color: hsl(var(--kanvas-color), 0%, 10%); }
 .kanvas-toolbar span { filter: drop-shadow(2px 2px 2px hsl(var(--kanvas-color), 50%, 0%)); }
+
+.kanvas-toolbar input[type='range'] { display: unset; }
+.kanvas-toolbar input[type="number"] { background-color: transparent; border: none; font-family: 'NotoSans'; font-size: 0.8em; width: 3.8em; color: hsl(var(--kanvas-color), 0%, 85%); padding: 0; text-align: right; }
+.kanvas-toolbar input[type="number"]:focus { outline: none; }
+
 .konvajs-content { background: black; width: fit-content !important; height: fit-content !important; }
 .kanvas-separator { opacity: 0.3; font-size: calc(1.1 * var(--kanvas-size)); position: relative; vertical-align: top; line-height: 1.6em; margin-right: -4px; cursor: pointer; filter: blur(1px) !important; }
 
@@ -46,8 +51,6 @@
 .kanvas-settings label { display: inline-block; min-width: 180px; line-height: 2.4em; }
 
 .kanvas-size label { font-family: 'NotoSans'; font-size: 0.8em; vertical-align: top; }
-.kanvas-size input[type="number"] { background-color: transparent; border: none; font-family: 'NotoSans'; font-size: 0.8em; width: 3.8em; color: hsl(var(--kanvas-color), 0%, 85%); padding: 0; text-align: right; vertical-align: top; }
-.kanvas-size input[type="number"]:focus { outline: none; }
 
 @keyframes fade-in {
   0% { opacity: 0; display: none; }
