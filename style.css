@@ -16,7 +16,7 @@
 .kanvas-separator { opacity: 0.3; font-size: calc(1.1 * var(--kanvas-size)); position: relative; vertical-align: top; line-height: 1.6em; margin-right: -4px; cursor: pointer; filter: blur(1px) !important; }
 
 .kanvas-section { display: none; opacity: 0.0; }
-.kanvas-section.active { display: inline; opacity: 0.75; animation: fade-in 0.5s ease-in forwards; }
+.kanvas-section.active { display: inline; opacity: 0.75; animation: kanvas-fade-in 0.5s ease-in forwards; }
 
 .kanvas-button { color: hsl(var(--kanvas-color), 0%, 85%); padding: 0.3em 0.3em 0.3em 0.4em; border-radius: 4px; cursor: pointer; user-select: none; transition: background-color 0.3s ease; margin-right: -4px; letter-spacing: 2px; }
 .kanvas-button:hover { background-color: hsl(var(--kanvas-color), 50%, 40%); }
@@ -44,7 +44,7 @@
 .kanvas-textbox:focus { outline: none; border: none; box-shadow: none; }
 
 .kanvas-text { font-size: 0.7em; cursor: pointer; opacity: 0.75; }
-.kanvas-text.active { display: inline; opacity: 0.75; animation: fade-in 1.0s ease-in forwards; }
+.kanvas-text.active { display: inline; opacity: 0.75; animation: kanvas-fade-in 1.0s ease-in forwards; }
 
 .kanvas-settings { position: absolute; background: hsl(var(--kanvas-color), 0%, 10%); margin-top: 1em; margin-left: 1em; padding: 0.5em; border-radius: 4px; filter: drop-shadow(2px 2px 2px hsl(var(--kanvas-color), 50%, 0%)); top: calc(4 * var(--kanvas-size)); display: none; }
 
@@ -52,7 +52,7 @@
 
 .kanvas-size label { font-family: 'NotoSans'; font-size: 0.8em; vertical-align: top; }
 
-@keyframes fade-in {
+@keyframes kanvas-fade-in {
   0% { opacity: 0; display: none; }
   100% { opacity: 0.75; display: inline; }
 }
