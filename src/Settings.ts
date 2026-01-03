@@ -1,4 +1,4 @@
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 const html = `
   <h3>Kanvas Settings</h3>

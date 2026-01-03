@@ -4,7 +4,7 @@ let kanvasInstance = null;
 const kanvasElement = 'kanvas-container';
 const kanvasChangeButton = 'kanvas-change-button';
 
-function getKanvasData() { // eslint-disable-line @typescript-eslint/no-unused-vars, no-unused-vars
+function getKanvasData() {
   if (kanvasInstance) return kanvasInstance.getImage();
   return null;
 }
@@ -15,7 +15,7 @@ async function initKanvas() {
   let el = document.getElementById(kanvasElement);
   while (!el) {
     if (performance.now() - t0 > 20000) {
-      console.error('Kanvas: timeout', kanvasElement); // eslint-disable-line no-console
+      console.error('Kanvas: timeout', kanvasElement);
       return;
     }
     el = document.getElementById(kanvasElement);

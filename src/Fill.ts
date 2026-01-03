@@ -1,4 +1,4 @@
-export function fillTransparent(canvas: HTMLCanvasElement, alphaThreshold: number = 0): HTMLCanvasElement {
+export function fillTransparent(canvas: HTMLCanvasElement, alphaThreshold = 0): HTMLCanvasElement {
   const ctx: CanvasRenderingContext2D | null = canvas.getContext('2d');
   if (!ctx) return canvas;
 
@@ -13,11 +13,11 @@ export function fillTransparent(canvas: HTMLCanvasElement, alphaThreshold: numbe
   const visited: Uint8Array = new Uint8Array(total); // 0 = unvisited, 1 = visited
   const assigned: Uint8ClampedArray = new Uint8ClampedArray(total * 4); // r,g,b,a for each pixel
   const queue: Uint32Array = new Uint32Array(total); // BFS queue (indices)
-  let qHead: number = 0;
-  let qTail: number = 0;
+  let qHead = 0;
+  let qTail = 0;
 
   // initialize: enqueue all non-transparent pixels as BFS sources
-  for (let i: number = 0, p: number = 0; i < total; ++i, p += 4) {
+  for (let i = 0, p = 0; i < total; ++i, p += 4) {
     const a: number = data[p + 3];
     if (a > alphaThreshold) {
       visited[i] = 1;
@@ -97,7 +97,7 @@ export function fillTransparent(canvas: HTMLCanvasElement, alphaThreshold: numbe
   }
 
   // write filled colors back only for originally transparent pixels
-  for (let i: number = 0, p: number = 0; i < total; ++i, p += 4) {
+  for (let i = 0, p = 0; i < total; ++i, p += 4) {
     if (data[p + 3] <= alphaThreshold && assigned[p + 3] !== 0) {
       data[p] = assigned[p];
       data[p + 1] = assigned[p + 1];

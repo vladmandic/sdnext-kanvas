@@ -1,11 +1,11 @@
 import Konva from 'konva';
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 function hexToGrayscale(hex: string) {
-  const _hex = hex.replace('#', '');
-  const r = parseInt(_hex.substring(0, 2), 16);
-  const g = parseInt(_hex.substring(2, 4), 16);
-  const b = parseInt(_hex.substring(4, 6), 16);
+  const hexval = hex.replace('#', '');
+  const r = parseInt(hexval.substring(0, 2), 16);
+  const g = parseInt(hexval.substring(2, 4), 16);
+  const b = parseInt(hexval.substring(4, 6), 16);
   const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
   const grayHex = gray.toString(16).padStart(2, '0');
   return `#${grayHex}${grayHex}${grayHex}`;
@@ -14,12 +14,12 @@ function hexToGrayscale(hex: string) {
 export default class Paint {
   k: Kanvas;
   brushSize: number;
-  brushOpacity: number = 1;
-  brushMode: string = 'source-over';
-  brushColor: string = '#ffffff';
-  textFont: string = 'Calibri';
-  textValue: string = 'Hello World';
-  isPainting: boolean = false;
+  brushOpacity = 1;
+  brushMode = 'source-over';
+  brushColor = '#ffffff';
+  textFont = 'Calibri';
+  textValue = 'Hello World';
+  isPainting = false;
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -101,7 +101,7 @@ export default class Paint {
       this.k.toolbar.resetButtons();
       let fontSize = 4;
       const maxFontSize = 500;
-      while (fontSize < maxFontSize) { // eslint-disable-line no-constant-condition
+      while (fontSize < maxFontSize) {
         const x0 = Math.min(pos0.x, pos1.x) / this.k.resize.scale;
         const y0 = Math.min(pos0.y, pos1.y) / this.k.resize.scale;
         const x1 = Math.max(pos0.x, pos1.x) / this.k.resize.scale;

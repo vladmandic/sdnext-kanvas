@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 export default class Upload {
   k: Kanvas;
@@ -22,7 +22,7 @@ export default class Upload {
       const dropImage = new Image();
       this.k.layer = this.k.selectedLayer === 'image' ? this.k.imageLayer : this.k.maskLayer;
       this.k.group = this.k.selectedLayer === 'image' ? this.k.imageGroup : this.k.maskGroup;
-      dropImage.onload = () => { // eslint-disable-line no-loop-func
+      dropImage.onload = () => {
         if (!this.k.stage) return;
         const image = new Konva.Image({
           image: dropImage,
@@ -58,7 +58,7 @@ export default class Upload {
     }
   }
 
-  async uploadFile(checkEmpty: boolean = true) {
+  async uploadFile(checkEmpty = true) {
     if (checkEmpty && !this.k.helpers.isEmpty()) return;
     const input = document.createElement('input');
     input.type = 'file';
