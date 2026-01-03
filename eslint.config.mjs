@@ -2,10 +2,10 @@ import path from 'node:path';
 
 import { includeIgnoreFile } from '@eslint/compat';
 import js from '@eslint/js';
-import { defineConfig } from 'eslint/config';
-import { configs, plugins } from 'eslint-config-airbnb-extended';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import { configs, helpers, plugins } from 'eslint-config-airbnb-extended';
 import globals from 'globals';
-// import css from '@eslint/css';
+import css from '@eslint/css';
 import pluginPromise from 'eslint-plugin-promise';
 
 const gitignorePath = path.resolve('.', '.gitignore');
@@ -14,12 +14,8 @@ const jsConfig = defineConfig([
   // ESLint recommended config
   {
     name: 'js/config',
+    files: helpers.extensions.allFiles,
     ...js.configs.recommended,
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-      },
-    },
   },
   pluginPromise.configs['flat/recommended'],
   // Stylistic plugin
@@ -28,59 +24,14 @@ const jsConfig = defineConfig([
   plugins.importX,
   // Airbnb base recommended config
   ...configs.base.recommended,
-]);
-
-const typescriptConfig = defineConfig([
-  // TypeScript ESLint plugin
-  plugins.typescriptEslint,
-  // Airbnb base TypeScript config
-  ...configs.base.typescript,
-]);
-
-// const cssConfig = defineConfig([
-//   {
-//     files: ['**/*.css'],
-//     language: 'css/css',
-//     plugins: { css },
-//     extends: ['css/recommended'],
-//     rules: {
-//       'css/font-family-fallbacks': 'off',
-//       'css/no-invalid-properties': [
-//         'error',
-//         {
-//           allowUnknownVariables: true,
-//         },
-//       ],
-//       'css/no-important': 'off',
-//       'css/use-baseline': [
-//         'warn',
-//         {
-//           available: 'newly',
-//         },
-//       ],
-//     },
-//   },
-// ]);
-
-export default defineConfig([
-  // Ignore files and folders listed in .gitignore
-  includeIgnoreFile(gitignorePath),
-  // JavaScript config
-  ...jsConfig,
-  // TypeScript config
-  ...typescriptConfig,
-  // ...cssConfig,
   {
-    ignores: [
-      '**/dist/**',
-    ],
-  },
-  {
+    files: helpers.extensions.allFiles,
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+    },
     rules: {
-      '@typescript-eslint/ban-ts-comment': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-shadow': 'error',
-      '@typescript-eslint/no-var-requires': 'off',
       'dot-notation': 'off',
       'func-names': 'off',
       'guard-for-in': 'off',
@@ -160,4 +111,57 @@ export default defineConfig([
       ],
     },
   },
+]);
+
+const typescriptConfig = defineConfig([
+  // TypeScript ESLint plugin
+  plugins.typescriptEslint,
+  // Airbnb base TypeScript config
+  ...configs.base.typescript,
+  {
+    name: 'sdnext/typescript',
+    files: helpers.extensions.tsFiles,
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-shadow': 'error',
+      '@typescript-eslint/no-var-requires': 'off',
+    },
+  },
+]);
+
+const cssConfig = defineConfig([
+  {
+    files: ['**/*.css'],
+    language: 'css/css',
+    plugins: { css },
+    extends: ['css/recommended'],
+    rules: {
+      'css/font-family-fallbacks': 'off',
+      'css/no-invalid-properties': [
+        'error',
+        {
+          allowUnknownVariables: true,
+        },
+      ],
+      'css/no-important': 'off',
+      'css/use-baseline': [
+        'warn',
+        {
+          available: 'newly',
+        },
+      ],
+    },
+  },
+]);
+
+export default defineConfig([
+  // Ignore files and folders listed in .gitignore
+  includeIgnoreFile(gitignorePath),
+  globalIgnores([
+    '**/dist/**',
+  ]),
+  ...jsConfig,
+  ...typescriptConfig,
+  ...cssConfig,
 ]);
