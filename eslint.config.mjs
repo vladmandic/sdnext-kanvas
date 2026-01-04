@@ -67,7 +67,6 @@ const jsConfig = defineConfig([
       'no-return-assign': 'off',
       'no-control-regex': 'off',
       'no-param-reassign': ['warn', { props: false }],
-      // Begin copy from SDNext
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/indent': ['error', 2],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: true }],
@@ -111,7 +110,7 @@ const nodeConfig = defineConfig([
       },
     },
     rules: {
-      // Import as rule sets to override the `files` setting from default config
+      // Import as rule sets to prevent applying to files meant only for the browser
       ...rules.node.base.rules,
       ...rules.node.globals.rules,
       ...rules.node.noUnsupportedFeatures.rules,
