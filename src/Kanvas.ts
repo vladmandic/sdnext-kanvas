@@ -169,6 +169,19 @@ export default class Kanvas {
     */
   }
 
+  addImage(url: string) {
+    this.stopActions();
+    const onImage = (img: Konva.Image) => {
+      this.imageGroup.add(img);
+      this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
+      this.resize.resizeStageToFit(img, true);
+    };
+    const onError = () => {
+      this.helpers.showMessage('Error loading image');
+    };
+    Konva.Image.fromURL(url, onImage, onError);
+  }
+
   getImageData() {
     const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
     const ctxCanvas = imageCanvas.getContext('2d') as CanvasRenderingContext2D;

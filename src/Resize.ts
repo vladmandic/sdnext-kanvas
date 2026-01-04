@@ -62,11 +62,15 @@ export default class Resize {
     }
   }
 
-  async _resizeStage(el: Konva.Image | Konva.Group) {
+  async _resizeStage(el: Konva.Image | Konva.Group, force: boolean = false) {
     const box = el.getClientRect();
     const width = this.k.stage.width();
     const height = this.k.stage.height();
     // resizing stage
+    if (force) {
+      this.k.stage.width(box.x + box.width);
+      this.k.stage.height(box.y + box.height);
+    }
     if (el === this.k.group) {
       if (box.x > 0) this.k.stage.width(width - box.x);
       if (box.y > 0) this.k.stage.height(height - box.y);
@@ -100,9 +104,9 @@ export default class Resize {
     }
   }
 
-  async resizeStageToFit(el: Konva.Image | Konva.Group) {
+  async resizeStageToFit(el: Konva.Image | Konva.Group, force: boolean = false) {
     clearTimeout(this.debounceResize);
-    this.debounceResize = window.setTimeout(() => this._resizeStage(el), this.debounce);
+    this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
   }
 
   async resizeStage(width: number, height: number) {

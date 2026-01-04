@@ -12102,10 +12102,14 @@ var Resize = class {
       heightInput.value = String(Math.round(this.k.stage.height()));
     }
   }
-  async _resizeStage(el) {
+  async _resizeStage(el, force = false) {
     const box = el.getClientRect();
     const width = this.k.stage.width();
     const height = this.k.stage.height();
+    if (force) {
+      this.k.stage.width(box.x + box.width);
+      this.k.stage.height(box.y + box.height);
+    }
     if (el === this.k.group) {
       if (box.x > 0) this.k.stage.width(width - box.x);
       if (box.y > 0) this.k.stage.height(height - box.y);
@@ -12136,9 +12140,9 @@ var Resize = class {
       this.updateSizeInputs();
     }
   }
-  async resizeStageToFit(el) {
+  async resizeStageToFit(el, force = false) {
     clearTimeout(this.debounceResize);
-    this.debounceResize = window.setTimeout(() => this._resizeStage(el), this.debounce);
+    this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
   }
   async resizeStage(width, height) {
     this.k.stage.width(width);
@@ -12744,6 +12748,18 @@ var Kanvas = class {
     this.resize.stopClip();
     this.resize.stopResize();
     this.paint.stopPaint();
+  }
+  addImage(url) {
+    this.stopActions();
+    const onImage = (img) => {
+      this.imageGroup.add(img);
+      this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
+      this.resize.resizeStageToFit(img, true);
+    };
+    const onError = () => {
+      this.helpers.showMessage("Error loading image");
+    };
+    lib_default.Image.fromURL(url, onImage, onError);
   }
   getImageData() {
     const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
