@@ -3,8 +3,9 @@ import path from 'node:path';
 import { includeIgnoreFile } from '@eslint/compat';
 import css from '@eslint/css';
 import js from '@eslint/js';
+import json from '@eslint/json';
 import html from '@html-eslint/eslint-plugin';
-import { configs, helpers, plugins } from 'eslint-config-airbnb-extended';
+import { configs, helpers, plugins, rules } from 'eslint-config-airbnb-extended';
 import pluginPromise from 'eslint-plugin-promise';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
@@ -141,39 +142,40 @@ const typescriptConfig = defineConfig([
   },
 ]);
 
-// const nodeConfig = defineConfig([
-//   // Node plugin
-//   plugins.node,
-//   {
-//     name: 'sdnext/node',
-//     files: ['**/cli/*.js'],
-//     languageOptions: {
-//       globals: {
-//         ...globals.node,
-//       },
-//     },
-//     rules: {
-//       // Import as rule sets to override the `files` setting from default config
-//       ...rules.node.base.rules,
-//       ...rules.node.globals.rules,
-//       ...rules.node.noUnsupportedFeatures.rules,
-//       ...rules.node.promises.rules,
-//       'n/no-sync': 'off',
-//       'n/no-process-exit': 'off',
-//       'n/hashbang': 'off',
-//     },
-//   },
-// ]);
+const nodeConfig = defineConfig([
+  // Node plugin
+  plugins.node,
+  {
+    name: 'sdnext/node',
+    files: helpers.extensions.allFiles,
+    ignores: ['**/src/*', '**/javascript/*'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      // Import as rule sets to override the `files` setting from default config
+      ...rules.node.base.rules,
+      ...rules.node.globals.rules,
+      ...rules.node.noUnsupportedFeatures.rules,
+      ...rules.node.promises.rules,
+      'n/no-sync': 'off',
+      'n/no-process-exit': 'off',
+      'n/hashbang': 'off',
+    },
+  },
+]);
 
-// const jsonConfig = defineConfig([
-//   {
-//     files: ['**/*.json'],
-//     ignores: ['package-lock.json'],
-//     plugins: { json },
-//     language: 'json/json',
-//     extends: ['json/recommended'],
-//   },
-// ]);
+const jsonConfig = defineConfig([
+  {
+    files: ['**/*.json'],
+    ignores: ['package-lock.json'],
+    plugins: { json },
+    language: 'json/json',
+    extends: ['json/recommended'],
+  },
+]);
 
 // const markdownConfig = defineConfig([
 //   {
@@ -257,8 +259,8 @@ export default defineConfig([
   ]),
   ...jsConfig,
   ...typescriptConfig,
-  // ...nodeConfig,
-  // ...jsonConfig,
+  ...nodeConfig,
+  ...jsonConfig,
   // ...markdownConfig,
   ...cssConfig,
   ...htmlConfig,
