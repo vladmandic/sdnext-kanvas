@@ -69,58 +69,16 @@ const jsConfig = defineConfig([
       'no-restricted-syntax': 'off',
       'no-return-assign': 'off',
       'no-control-regex': 'off',
-      'no-param-reassign': [
-        'error',
-        {
-          props: false,
-        },
-      ],
+      'no-param-reassign': ['error', { props: false }],
       // Begin copy from SDNext
-      '@stylistic/brace-style': [
-        'error',
-        '1tbs',
-        {
-          allowSingleLine: true,
-        },
-      ],
+      '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/indent': ['error', 2],
-      '@stylistic/lines-between-class-members': [
-        'error',
-        'always',
-        {
-          exceptAfterSingleLine: true,
-        },
-      ],
-      '@stylistic/max-len': [
-        'warn',
-        {
-          code: 275,
-          tabWidth: 2,
-        },
-      ],
-      '@stylistic/max-statements-per-line': 'off',
-      '@stylistic/no-mixed-operators': 'off',
-      '@stylistic/object-curly-newline': [
-        'error',
-        {
-          multiline: true,
-          consistent: true,
-        },
-      ],
-      '@stylistic/quotes': [
-        'error',
-        'single',
-        {
-          avoidEscape: true,
-        },
-      ],
-      '@stylistic/semi': [
-        'error',
-        'always',
-        {
-          omitLastInOneLineBlock: false,
-        },
-      ],
+      '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: true }],
+      '@stylistic/max-len': ['warn', { code: 275, tabWidth: 2 }],
+      '@stylistic/max-statements-per-line': ['error', { max: 2 }],
+      '@stylistic/object-curly-newline': ['error', { multiline: true, consistent: true }],
+      '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
+      '@stylistic/semi': ['error', 'always', { omitLastInOneLineBlock: false }],
     },
   },
 ]);
@@ -198,12 +156,7 @@ const cssConfig = defineConfig([
     // },
     rules: {
       'css/font-family-fallbacks': 'off',
-      'css/no-invalid-properties': [
-        'error',
-        {
-          allowUnknownVariables: true,
-        },
-      ],
+      'css/no-invalid-properties': ['error', { allowUnknownVariables: true }],
       'css/no-important': 'off',
       'css/use-baseline': 'off',
     },
@@ -220,32 +173,11 @@ const htmlConfig = defineConfig([
     language: 'html/html',
     rules: {
       'html/attrs-newline': 'off',
-      'html/element-newline': [
-        'error',
-        {
-          inline: ['$inline'],
-        },
-      ],
-      'html/indent': [
-        'warn',
-        2,
-      ],
+      'html/element-newline': ['error', { inline: ['$inline'] }],
+      'html/indent': ['warn', 2],
       'html/no-duplicate-class': 'error',
-      'html/no-extra-spacing-attrs': [
-        'error',
-        {
-          enforceBeforeSelfClose: true,
-          disallowMissing: true,
-          disallowTabs: true,
-          disallowInAssignment: true,
-        },
-      ],
-      'html/require-closing-tags': [
-        'error',
-        {
-          selfClosing: 'always',
-        },
-      ],
+      'html/no-extra-spacing-attrs': ['error', { enforceBeforeSelfClose: true, disallowMissing: true, disallowTabs: true, disallowInAssignment: true }],
+      'html/require-closing-tags': ['error', { selfClosing: 'always' }],
       'html/use-baseline': 'off',
     },
   },
