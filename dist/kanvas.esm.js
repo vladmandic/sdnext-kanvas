@@ -12088,6 +12088,11 @@ var Resize = class {
         kanvasEl.style.marginLeft = "0px";
       }
     }
+    if (this.k.stage.height() > 128) {
+      this.k.container.style.height = `${this.k.stage.height()}px`;
+    } else {
+      this.k.container.style.height = "unset";
+    }
     if (!this.k.helpers.isEmpty()) this.k.helpers.showMessage(`Zoom: ${Math.round(this.scale * 100)}%`);
   }
   async fitStage(el = this.k.wrapper) {
