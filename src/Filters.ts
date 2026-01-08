@@ -1,10 +1,10 @@
 import Konva from 'konva';
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 export default class Filter {
   k: Kanvas;
-  filterValue: number = 10;
-  filterName: string = 'blur';
+  filterValue = 10;
+  filterName = 'blur';
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -12,7 +12,7 @@ export default class Filter {
 
   applyFilter() {
     if (this.k.selected && this.k.selected instanceof Konva.Image) {
-      const image = this.k.selected as Konva.Image;
+      const image = this.k.selected;
       image.cache();
       this.k.helpers.showMessage(`Apply filter: ${this.filterName} value=${this.filterValue}`);
       if (this.filterName === 'blur') {

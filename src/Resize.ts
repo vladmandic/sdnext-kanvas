@@ -1,13 +1,13 @@
 import Konva from 'konva';
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 export default class Resize {
   k: Kanvas;
   clipBox: Konva.Rect | undefined;
-  debounce: number = 200;
-  debounceFit: number = 0;
-  debounceResize: number = 0;
-  scale: number = 1;
+  debounce = 200;
+  debounceFit = 0;
+  debounceResize = 0;
+  scale = 1;
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -33,8 +33,8 @@ export default class Resize {
       );
     }
     el.querySelectorAll('canvas').forEach((canvas) => {
-      (canvas as HTMLCanvasElement).style.width = `${this.k.stage.width() * this.scale}px`; // eslint-disable-line no-param-reassign
-      (canvas as HTMLCanvasElement).style.height = `${this.k.stage.height() * this.scale}px`; // eslint-disable-line no-param-reassign
+      canvas.style.width = `${this.k.stage.width() * this.scale}px`;
+      canvas.style.height = `${this.k.stage.height() * this.scale}px`;
     });
     const kanvasEl = document.getElementById(`${this.k.containerId}-kanvas`);
     if (kanvasEl && !this.k.helpers.isEmpty()) {

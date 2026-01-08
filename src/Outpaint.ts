@@ -1,12 +1,12 @@
 import Konva from 'konva';
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 import { fillTransparent } from './Fill';
 
 export default class Outpaint {
   k: Kanvas;
-  outpaintBlur: number = 0.1;
-  outpaintExpand: number = 0.1;
-  outpaintActive: boolean = false;
+  outpaintBlur = 0.1;
+  outpaintExpand = 0.1;
+  outpaintActive = false;
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -14,7 +14,7 @@ export default class Outpaint {
 
   fillOutpaint() {
     this.k.imageLayer.cache();
-    const canvas = this.k.imageLayer.toCanvas({ imageSmoothingEnabled: false }) as HTMLCanvasElement;
+    const canvas = this.k.imageLayer.toCanvas({ imageSmoothingEnabled: false });
     const filled = fillTransparent(canvas, 0);
     const konvaImg = new Konva.Image({ x: 0, y: 0, image: filled });
     konvaImg.name('fill');

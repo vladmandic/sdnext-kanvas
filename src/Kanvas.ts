@@ -10,7 +10,7 @@ import Filter from './Filters';
 import Pan from './Pan';
 
 export default class Kanvas {
-  initial: boolean = true;
+  initial = true;
   // elements
   containerId: string;
   wrapper: HTMLDivElement;
@@ -29,7 +29,7 @@ export default class Kanvas {
   selectedLayer: 'image' | 'mask' = 'image';
   imageMode: 'none' | 'upload' | 'resize' | 'crop' | 'paint' | 'filters' | 'text' | 'outpaint' = 'upload';
   // variables
-  opacity: number = 1;
+  opacity = 1;
   // class extensions
   settings: Settings;
   toolbar: Toolbar;
@@ -222,19 +222,19 @@ export default class Kanvas {
     let imageData: string | null = null;
     let maskData: string | null = null;
     if (this.imageGroup.hasChildren()) {
-      const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() }) as HTMLCanvasElement;
+      const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
       imageData = imageCanvas.toDataURL('image/png');
     }
     if (this.maskGroup.hasChildren()) {
-      const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() }) as HTMLCanvasElement;
+      const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
       maskData = maskCanvas.toDataURL('image/png');
     }
     if (!imageData) {
       return null;
     }
     const result = { kanvas: true };
-    if (imageData) result['image'] = imageData;
-    if (maskData) result['mask'] = maskData;
+    if (imageData) result.image = imageData;
+    if (maskData) result.mask = maskData;
     this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     return result;
   }

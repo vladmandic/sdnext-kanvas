@@ -1,8 +1,8 @@
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 export default class Pan {
   k: Kanvas;
-  moving: boolean = false;
+  moving = false;
   constructor(k: Kanvas) {
     this.k = k;
   }

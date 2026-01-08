@@ -1,4 +1,4 @@
-import Kanvas from './Kanvas';
+import type Kanvas from './Kanvas';
 
 export default class Toolbar {
   k: Kanvas;
@@ -200,8 +200,8 @@ export default class Toolbar {
       evt.stopPropagation();
       const widthInput = document.getElementById(`${this.k.containerId}-image-width`) as HTMLInputElement;
       const heightInput = document.getElementById(`${this.k.containerId}-image-height`) as HTMLInputElement;
-      const width = parseInt((widthInput as HTMLInputElement).value, 10);
-      const height = parseInt((heightInput as HTMLInputElement).value, 10);
+      const width = parseInt((widthInput).value, 10);
+      const height = parseInt((heightInput).value, 10);
       this.k.resize.resizeStage(width, height);
     };
     document.getElementById(`${this.k.containerId}-image-width`)?.addEventListener('input', async (e) => resizeFromInputs(e));
