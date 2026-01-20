@@ -104,7 +104,6 @@
       "import/no-named-as-default": "off",
       "import/prefer-default-export": "off",
       "lines-between-class-members": "off",
-      "max-len": [1, 250, 3],
       "newline-per-chained-call": "off",
       "no-async-promise-executor": "off",
       "no-await-in-loop": "off",

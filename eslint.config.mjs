@@ -44,6 +44,7 @@ const jsConfig = defineConfig([
       },
     },
     rules: {
+      'max-len': [1, 250, 3],
       'dot-notation': 'off',
       'func-names': 'off',
       'guard-for-in': 'off',
