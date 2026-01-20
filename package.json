@@ -20,6 +20,8 @@
   },
   "keywords": [],
   "type": "module",
+  "dependencies": {
+  },
   "devDependencies": {
     "@eslint/compat": "^2.0.0",
     "@eslint/css": "^0.14.1",
@@ -32,16 +34,9 @@
     "eslint-config-airbnb-extended": "^3.0.0",
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^17.0.0",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
     "esbuild": "^0.27.2",
     "konva": "^10.0.9",
+    "typescript": "^5.9.3",
     "tslib": "^2.8.1"
-  },
-  "//": {
-    "disabled": {
-      "@eslint/markdown": "^7.5.1"
-    }
   }
 }
