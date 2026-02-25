@@ -99,6 +99,7 @@ export default class Kanvas {
     canvasEl.id = `${this.containerId}-kanvas`;
     // clear wrapper and append
     this.wrapper.textContent = '';
+    this.wrapper.tabIndex = -1;
     this.wrapper.appendChild(toolbarEl);
     this.wrapper.appendChild(canvasEl);
     this.container = canvasEl;
@@ -130,10 +131,16 @@ export default class Kanvas {
     this.toolbar.bindControls();
     this.pan.bindPan();
 
+    // register clipboard paste
+    this.wrapper.focus();
+    this.wrapper.addEventListener('paste', (evt) => this.upload.pasteImage(evt));
+
     // initial size
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
     resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
+
+    console.log('Focused element:', document.activeElement);
   }
 
   async selectNode(node: Konva.Node) {
@@ -232,7 +239,7 @@ export default class Kanvas {
     if (!imageData) {
       return null;
     }
-    const result = { kanvas: true };
+    const result = { kanvas: true, image: null as string | null, mask: null as string | null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
     this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);

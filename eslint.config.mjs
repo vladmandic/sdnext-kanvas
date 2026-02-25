@@ -71,6 +71,7 @@ const jsConfig = defineConfig([
       'no-return-assign': 'off',
       'no-control-regex': 'off',
       'no-param-reassign': ['error', { props: false }],
+      '@typescript-eslint/no-for-in-array': 'off',
       // Begin copy from SDNext
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/indent': ['error', 2],

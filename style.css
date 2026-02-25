@@ -4,7 +4,7 @@
 
 .kanvas { width: 100%; height: 100%; min-height: 128px; min-width: 128px; margin: auto; }
 .kanvas-wrapper { width: fit-content; height: fit-content; font-family: var(--kanvas-font); width: 100%; height: 100%; min-height: 100%; }
-.kanvas-toolbar { font-size: var(--kanvas-size); line-height: calc(2 * var(--kanvas-size)); vertical-align: middle; opacity: 0%; background-color: black; min-width: 100%; position: sticky; top: 0; left:0; z-index:1; }
+.kanvas-toolbar { font-size: var(--kanvas-size); line-height: calc(2 * var(--kanvas-size)); vertical-align: middle; opacity: 0%; background-color: black; min-width: 100%; position: sticky; top: 0; left:0; z-index:1; border-radius: 4px; }
 .kanvas-toolbar.active { opacity: 100%; transition: opacity,background-color 0.2s ease-in; background-color: hsl(var(--kanvas-color), 0%, 10%); }
 .kanvas-toolbar span { filter: drop-shadow(2px 2px 2px hsl(var(--kanvas-color), 50%, 0%)); }
 

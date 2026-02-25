@@ -67,7 +67,7 @@ export default class Resize {
     }
   }
 
-  async _resizeStage(el: Konva.Image | Konva.Group, force: boolean = false) {
+  async _resizeStage(el: Konva.Image | Konva.Group, force = false) {
     const box = el.getClientRect();
     const width = this.k.stage.width();
     const height = this.k.stage.height();
@@ -109,7 +109,7 @@ export default class Resize {
     }
   }
 
-  async resizeStageToFit(el: Konva.Image | Konva.Group, force: boolean = false) {
+  async resizeStageToFit(el: Konva.Image | Konva.Group, force = false) {
     clearTimeout(this.debounceResize);
     this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
   }

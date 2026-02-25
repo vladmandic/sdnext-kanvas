@@ -21,6 +21,7 @@
   "keywords": [],
   "type": "module",
   "dependencies": {
+    "konva": "^10.0.9"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.0",
@@ -35,7 +36,6 @@
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^17.0.0",
     "esbuild": "^0.27.2",
-    "konva": "^10.0.9",
     "typescript": "^5.9.3",
     "tslib": "^2.8.1"
   }

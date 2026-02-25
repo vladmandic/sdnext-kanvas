@@ -12091,6 +12091,51 @@ var Upload = class {
   constructor(k) {
     this.k = k;
   }
+  async pasteImage(e) {
+    const items = e.clipboardData?.items || [];
+    if (!items) return;
+    for (const i in items) {
+      const item = items[i];
+      if (!item?.type?.startsWith("image/")) continue;
+      const file = item.getAsFile();
+      if (!file) continue;
+      const url = URL.createObjectURL(file);
+      const dropImage = new Image();
+      dropImage.onload = () => {
+        if (!this.k.stage) return;
+        const image = new lib_default.Image({
+          image: dropImage,
+          x: 0,
+          y: 0,
+          draggable: false,
+          opacity: this.k.opacity
+        });
+        image.name(file.name);
+        this.k.controls.style.display = "contents";
+        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        URL.revokeObjectURL(url);
+        if (this.k.helpers.isEmpty()) {
+          this.k.stage.size({ width: 0, height: 0 });
+          this.k.resize.resizeStageToFit(image);
+        }
+        this.k.group.add(image);
+        if (this.k.selectedLayer === "mask") {
+          image.cache();
+          image.filters([lib_default.Filters.Grayscale]);
+          image.opacity(0.5);
+        }
+        image.on("transform", () => this.k.resize.resizeStageToFit(image));
+        image.on("dragmove", () => this.k.resize.resizeStageToFit(image));
+        image.on("click", () => this.k.selectNode(image));
+        this.k.stage.batchDraw();
+        this.k.resize.resizeStageToFit(image);
+        if (this.k.helpers.isEmpty()) this.k.onchange();
+      };
+      dropImage.onerror = () => URL.revokeObjectURL(url);
+      dropImage.crossOrigin = "Anonymous";
+      dropImage.src = url;
+    }
+  }
   async uploadImage(e) {
     e.preventDefault();
     this.k.stopActions();
@@ -12816,6 +12861,7 @@ var Kanvas = class {
     canvasEl.className = "kanvas";
     canvasEl.id = `${this.containerId}-kanvas`;
     this.wrapper.textContent = "";
+    this.wrapper.tabIndex = -1;
     this.wrapper.appendChild(toolbarEl);
     this.wrapper.appendChild(canvasEl);
     this.container = canvasEl;
@@ -12838,9 +12884,12 @@ var Kanvas = class {
     this.helpers.bindStage();
     this.toolbar.bindControls();
     this.pan.bindPan();
+    this.wrapper.focus();
+    this.wrapper.addEventListener("paste", (evt) => this.upload.pasteImage(evt));
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
     resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
+    console.log("Focused element:", document.activeElement);
   }
   async selectNode(node) {
     this.pan.moving = false;
@@ -12928,7 +12977,7 @@ var Kanvas = class {
     if (!imageData) {
       return null;
     }
-    const result = { kanvas: true };
+    const result = { kanvas: true, image: null, mask: null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
     this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
