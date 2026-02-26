@@ -139,8 +139,6 @@ export default class Kanvas {
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
     resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
-
-    console.log('Focused element:', document.activeElement);
   }
 
   async selectNode(node: Konva.Node) {

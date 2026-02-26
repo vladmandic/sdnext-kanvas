@@ -12889,7 +12889,6 @@ var Kanvas = class {
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
     resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
-    console.log("Focused element:", document.activeElement);
   }
   async selectNode(node) {
     this.pan.moving = false;
