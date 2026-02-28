@@ -97,6 +97,7 @@ export default class Resize {
       this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
       this.updateSizeInputs();
       this.fitStage();
+      this.k.notifyImage();
     }
     // limit max size
     if ((this.k.stage.width() > this.k.settings.settings.maxSize) || (this.k.stage.height() > this.k.settings.settings.maxSize)) {

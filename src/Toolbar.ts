@@ -14,6 +14,7 @@ export default class Toolbar {
 
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\udb82\udc7c</span>
+      <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\udb86\ude00</span>
       <span class="kanvas-button" title="Remove currently selected image" id="${this.k.containerId}-button-remove">\udb85\udc18</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uf1b8</span>
 
@@ -176,6 +177,12 @@ export default class Toolbar {
       this.k.imageMode = 'upload';
       this.resetButtons();
       this.k.upload.uploadFile(false);
+    });
+    document.getElementById(`${this.k.containerId}-button-paste`)?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const status = await document.execCommand('paste');
+      if (!status) this.k.upload.pasteImage();
     });
     document.getElementById(`${this.k.containerId}-button-remove`)?.addEventListener('click', async (e) => {
       e.preventDefault();

@@ -11,6 +11,7 @@ import Pan from './Pan';
 
 export default class Kanvas {
   initial = true;
+  log: (message: string) => void;
   // elements
   containerId: string;
   wrapper: HTMLDivElement;
@@ -119,9 +120,10 @@ export default class Kanvas {
     this.outpaint = new Outpaint(this);
     this.filter = new Filter(this);
     this.pan = new Pan(this);
+    this.log = this.helpers.kanvasLog; // expose log function
 
     // log first init
-    if (this.initial) this.helpers.kanvasLog(`konva=${Konva.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
+    if (this.initial) this.log(`konva=${Konva.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
     this.controls = document.getElementById(`${this.containerId}-active-controls`) as HTMLSpanElement;
     this.initial = false;
 
@@ -172,6 +174,15 @@ export default class Kanvas {
     for (const shape of shapes) {
     }
     */
+  }
+
+  notifyImage() {
+    const kanvasChangeButton = 'kanvas-change-button';
+    const btn = document.getElementById(kanvasChangeButton);
+    if (btn) {
+      this.log(`Notify width=${this.stage.width()} height=${this.stage.height()}`);
+      btn.click();
+    }
   }
 
   addImage(url: string) {
@@ -251,5 +262,7 @@ declare global {
     Kanvas: typeof Kanvas;
   }
 }
+
+// @ts-ignore
 window.Kanvas = Kanvas;
 // window.kanvas = (el: string) => new Kanvas(el);

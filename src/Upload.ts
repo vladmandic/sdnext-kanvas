@@ -7,15 +7,29 @@ export default class Upload {
     this.k = k;
   }
 
-  async pasteImage(e: ClipboardEvent) {
-    const items = e.clipboardData?.items || [];
+  async pasteImage(e: ClipboardEvent | null = null) {
+    let items: any = [];
+    if (e instanceof ClipboardEvent) {
+      items = e.clipboardData?.items || [];
+    } else {
+      try {
+        items = await navigator.clipboard.read();
+      } catch { /**/ }
+    }
     if (!items) return;
+    // this.k.log(`Paste: items=${items}`);
     for (const i in items) {
       const item = items[i];
-      if (!item?.type?.startsWith('image/')) continue;
-      const file = item.getAsFile();
-      if (!file) continue;
-      const url = URL.createObjectURL(file);
+      let blob;
+      if (item?.types) { // navigator.clipboard
+        for (const type of item.types) {
+          if (type.startsWith('image/')) blob = await item.getType(type);
+        }
+      } else if (item?.type?.startsWith('image/')) { // clipboard paste event
+        blob = item.getAsFile();
+      }
+      if (!blob) continue;
+      const url = URL.createObjectURL(blob);
       const dropImage = new Image();
       dropImage.onload = () => {
         if (!this.k.stage) return;
@@ -26,9 +40,9 @@ export default class Upload {
           draggable: false,
           opacity: this.k.opacity,
         });
-        image.name(file.name);
+        image.name(blob.name);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${blob.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
           this.k.stage.size({ width: 0, height: 0 });

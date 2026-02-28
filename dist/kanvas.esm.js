@@ -11750,6 +11750,7 @@ var Toolbar = class {
 
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\u{F087C}</span>
+      <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\u{F1A00}</span>
       <span class="kanvas-button" title="Remove currently selected image" id="${this.k.containerId}-button-remove">\u{F1418}</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uF1B8</span>
 
@@ -11904,6 +11905,12 @@ var Toolbar = class {
       this.k.imageMode = "upload";
       this.resetButtons();
       this.k.upload.uploadFile(false);
+    });
+    document.getElementById(`${this.k.containerId}-button-paste`)?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const status = await document.execCommand("paste");
+      if (!status) this.k.upload.pasteImage();
     });
     document.getElementById(`${this.k.containerId}-button-remove`)?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -12091,15 +12098,29 @@ var Upload = class {
   constructor(k) {
     this.k = k;
   }
-  async pasteImage(e) {
-    const items = e.clipboardData?.items || [];
+  async pasteImage(e = null) {
+    let items = [];
+    if (e instanceof ClipboardEvent) {
+      items = e.clipboardData?.items || [];
+    } else {
+      try {
+        items = await navigator.clipboard.read();
+      } catch {
+      }
+    }
     if (!items) return;
     for (const i in items) {
       const item = items[i];
-      if (!item?.type?.startsWith("image/")) continue;
-      const file = item.getAsFile();
-      if (!file) continue;
-      const url = URL.createObjectURL(file);
+      let blob;
+      if (item?.types) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) blob = await item.getType(type);
+        }
+      } else if (item?.type?.startsWith("image/")) {
+        blob = item.getAsFile();
+      }
+      if (!blob) continue;
+      const url = URL.createObjectURL(blob);
       const dropImage = new Image();
       dropImage.onload = () => {
         if (!this.k.stage) return;
@@ -12110,9 +12131,9 @@ var Upload = class {
           draggable: false,
           opacity: this.k.opacity
         });
-        image.name(file.name);
+        image.name(blob.name);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${blob.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
           this.k.stage.size({ width: 0, height: 0 });
@@ -12293,6 +12314,7 @@ var Resize = class {
       this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
       this.updateSizeInputs();
       this.fitStage();
+      this.k.notifyImage();
     }
     if (this.k.stage.width() > this.k.settings.settings.maxSize || this.k.stage.height() > this.k.settings.settings.maxSize) {
       const rescale = Math.min(this.k.settings.settings.maxSize / this.k.stage.width(), this.k.settings.settings.maxSize / this.k.stage.height());
@@ -12775,6 +12797,7 @@ var Pan = class {
 // src/Kanvas.ts
 var Kanvas = class {
   initial = true;
+  log;
   // elements
   containerId;
   wrapper;
@@ -12877,7 +12900,8 @@ var Kanvas = class {
     this.outpaint = new Outpaint(this);
     this.filter = new Filter(this);
     this.pan = new Pan(this);
-    if (this.initial) this.helpers.kanvasLog(`konva=${lib_default.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
+    this.log = this.helpers.kanvasLog;
+    if (this.initial) this.log(`konva=${lib_default.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
     this.controls = document.getElementById(`${this.containerId}-active-controls`);
     this.initial = false;
     this.helpers.bindEvents();
@@ -12914,6 +12938,14 @@ var Kanvas = class {
     this.resize.stopClip();
     this.resize.stopResize();
     this.paint.stopPaint();
+  }
+  notifyImage() {
+    const kanvasChangeButton = "kanvas-change-button";
+    const btn = document.getElementById(kanvasChangeButton);
+    if (btn) {
+      this.log(`Notify width=${this.stage.width()} height=${this.stage.height()}`);
+      btn.click();
+    }
   }
   addImage(url) {
     this.stopActions();
