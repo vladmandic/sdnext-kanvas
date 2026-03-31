@@ -9,6 +9,7 @@
     "target": "es2022",
     "typeRoots": ["node_modules/@types"],
     "lib": ["dom", "es2022"],
+    "ignoreDeprecations": "6.0",
     "baseUrl": "./",
     "sourceMap": true,
     "noEmitOnError": false,

@@ -3,7 +3,7 @@
 */
 
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Global.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Global.js
 var PI_OVER_180 = Math.PI / 180;
 function detectBrowser() {
   return typeof window !== "undefined" && ({}.toString.call(window) === "[object Window]" || {}.toString.call(window) === "[object global]");
@@ -11,7 +11,7 @@ function detectBrowser() {
 var glob = typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof WorkerGlobalScope !== "undefined" ? self : {};
 var Konva = {
   _global: glob,
-  version: "10.2.0",
+  version: "10.2.3",
   isBrowser: detectBrowser(),
   isUnminified: /param/.test(function(param) {
   }.toString()),
@@ -64,7 +64,7 @@ var _registerNode = (NodeClass) => {
 };
 Konva._injectGlobal(Konva);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Util.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Util.js
 var NODE_ERROR = `Konva.js unsupported environment.
 
 Looks like you are trying to use Konva.js in Node.js environment. because "document" object is undefined.
@@ -946,7 +946,7 @@ var Util = {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Context.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Context.js
 function simplifyArray(arr) {
   const retArr = [], len = arr.length, util = Util;
   for (let n = 0; n < len; n++) {
@@ -1495,7 +1495,7 @@ var HitContext = class extends Context {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Canvas.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Canvas.js
 var _pixelRatio;
 function getDevicePixelRatio() {
   if (_pixelRatio) {
@@ -1592,7 +1592,7 @@ var HitCanvas = class extends Canvas {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/DragAndDrop.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/DragAndDrop.js
 var DD = {
   get isDragging() {
     let flag = false;
@@ -1640,6 +1640,9 @@ var DD = {
       nodesToFireEvents.push(node);
     });
     nodesToFireEvents.forEach((node) => {
+      if (!node.getStage()) {
+        return;
+      }
       node.fire("dragmove", {
         type: "dragmove",
         target: node,
@@ -1701,7 +1704,7 @@ if (Konva.isBrowser) {
   window.addEventListener("touchcancel", DD._endDragAfter, false);
 }
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Validators.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Validators.js
 function _formatValue(val) {
   if (Util._isString(val)) {
     return '"' + val + '"';
@@ -1823,7 +1826,7 @@ function getComponentValidator(components) {
   }
 }
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Factory.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Factory.js
 var GET = "get";
 var SET = "set";
 var Factory = {
@@ -1939,7 +1942,7 @@ var Factory = {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Node.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Node.js
 function parseCSSFilters(cssFilter) {
   const filterRegex = /(\w+)\(([^)]+)\)/g;
   let match;
@@ -2298,12 +2301,15 @@ var Node = class _Node {
     this._filterUpToDate = true;
     return filterCanvas;
   }
-  on(evtStr, handler) {
+  on(...args) {
+    const evtStr = args[0];
+    const selectorOrHandler = args[1];
+    const handler = args[2];
     if (this._cache) {
       this._cache.delete(ALL_LISTENERS);
     }
-    if (arguments.length === 3) {
-      return this._delegate.apply(this, arguments);
+    if (args.length === 3) {
+      return this._delegate.apply(this, args);
     }
     const events = evtStr.split(SPACE);
     for (let n = 0; n < events.length; n++) {
@@ -2314,7 +2320,7 @@ var Node = class _Node {
       if (!this.eventListeners[baseEvent]) {
         this.eventListeners[baseEvent] = [];
       }
-      this.eventListeners[baseEvent].push({ name, handler });
+      this.eventListeners[baseEvent].push({ name, handler: selectorOrHandler });
     }
     return this;
   }
@@ -2372,12 +2378,18 @@ var Node = class _Node {
         handler.call(targets[i], evt);
       }
     });
+    return this;
   }
   remove() {
     if (this.isDragging()) {
       this.stopDrag();
     }
     DD._dragElements.delete(this._id);
+    DD._dragElements.forEach((elem, key) => {
+      if (this.isAncestorOf(elem.node)) {
+        DD._dragElements.delete(key);
+      }
+    });
     this._remove();
     return this;
   }
@@ -3225,7 +3237,8 @@ var Node = class _Node {
         y: pos.y - ap.y
       },
       dragStatus: "ready",
-      pointerId
+      pointerId,
+      startEvent: evt
     });
   }
   startDrag(evt, bubbleEvent = true) {
@@ -3237,7 +3250,7 @@ var Node = class _Node {
     this.fire("dragstart", {
       type: "dragstart",
       target: this,
-      evt: evt && evt.evt
+      evt: elem.startEvent && elem.startEvent.evt || evt && evt.evt
     }, bubbleEvent);
   }
   _setDragPosition(evt, elem) {
@@ -3368,7 +3381,7 @@ Node.protoListenerMap = /* @__PURE__ */ new Map();
 Node.prototype.nodeType = "Node";
 Node.prototype._attrsAffectingSize = [];
 Node.prototype.eventListeners = {};
-Node.prototype.on.call(Node.prototype, TRANSFORM_CHANGE_STR, function() {
+Node.prototype.on(TRANSFORM_CHANGE_STR, function() {
   if (this._batchingTransformChange) {
     this._needClearTransformCache = true;
     return;
@@ -3376,13 +3389,13 @@ Node.prototype.on.call(Node.prototype, TRANSFORM_CHANGE_STR, function() {
   this._clearCache(TRANSFORM);
   this._clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
 });
-Node.prototype.on.call(Node.prototype, "visibleChange.konva", function() {
+Node.prototype.on("visibleChange.konva", function() {
   this._clearSelfAndDescendantCache(VISIBLE);
 });
-Node.prototype.on.call(Node.prototype, "listeningChange.konva", function() {
+Node.prototype.on("listeningChange.konva", function() {
   this._clearSelfAndDescendantCache(LISTENING);
 });
-Node.prototype.on.call(Node.prototype, "opacityChange.konva", function() {
+Node.prototype.on("opacityChange.konva", function() {
   this._clearSelfAndDescendantCache(ABSOLUTE_OPACITY);
 });
 var addGetterSetter = Factory.addGetterSetter;
@@ -3425,7 +3438,7 @@ Factory.backCompat(Node, {
   getRotationDeg: "getRotation"
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Container.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Container.js
 var Container = class extends Node {
   constructor() {
     super(...arguments);
@@ -3732,7 +3745,7 @@ Factory.addGetterSetter(Container, "clipWidth", void 0, getNumberValidator());
 Factory.addGetterSetter(Container, "clipHeight", void 0, getNumberValidator());
 Factory.addGetterSetter(Container, "clipFunc");
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/PointerEvents.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/PointerEvents.js
 var Captures = /* @__PURE__ */ new Map();
 var SUPPORT_POINTER_EVENTS = Konva._global["PointerEvent"] !== void 0;
 function getCapturedShape(pointerId) {
@@ -3770,7 +3783,7 @@ function releaseCapture(pointerId, target) {
   }
 }
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Stage.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Stage.js
 var STAGE2 = "Stage";
 var STRING = "string";
 var PX = "px";
@@ -4484,7 +4497,7 @@ if (Konva.isBrowser) {
   });
 }
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Shape.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Shape.js
 var HAS_SHADOW = "hasShadow";
 var SHADOW_RGBA = "shadowRGBA";
 var patternImage = "patternImage";
@@ -4912,11 +4925,11 @@ Shape.prototype._centroid = false;
 Shape.prototype.nodeType = "Shape";
 _registerNode(Shape);
 Shape.prototype.eventListeners = {};
-Shape.prototype.on.call(Shape.prototype, "shadowColorChange.konva shadowBlurChange.konva shadowOffsetChange.konva shadowOpacityChange.konva shadowEnabledChange.konva", _clearHasShadowCache);
-Shape.prototype.on.call(Shape.prototype, "shadowColorChange.konva shadowOpacityChange.konva shadowEnabledChange.konva", _clearGetShadowRGBACache);
-Shape.prototype.on.call(Shape.prototype, "fillPriorityChange.konva fillPatternImageChange.konva fillPatternRepeatChange.konva fillPatternScaleXChange.konva fillPatternScaleYChange.konva fillPatternOffsetXChange.konva fillPatternOffsetYChange.konva fillPatternXChange.konva fillPatternYChange.konva fillPatternRotationChange.konva", _clearFillPatternCache);
-Shape.prototype.on.call(Shape.prototype, "fillPriorityChange.konva fillLinearGradientColorStopsChange.konva fillLinearGradientStartPointXChange.konva fillLinearGradientStartPointYChange.konva fillLinearGradientEndPointXChange.konva fillLinearGradientEndPointYChange.konva", _clearLinearGradientCache);
-Shape.prototype.on.call(Shape.prototype, "fillPriorityChange.konva fillRadialGradientColorStopsChange.konva fillRadialGradientStartPointXChange.konva fillRadialGradientStartPointYChange.konva fillRadialGradientEndPointXChange.konva fillRadialGradientEndPointYChange.konva fillRadialGradientStartRadiusChange.konva fillRadialGradientEndRadiusChange.konva", _clearRadialGradientCache);
+Shape.prototype.on("shadowColorChange.konva shadowBlurChange.konva shadowOffsetChange.konva shadowOpacityChange.konva shadowEnabledChange.konva", _clearHasShadowCache);
+Shape.prototype.on("shadowColorChange.konva shadowOpacityChange.konva shadowEnabledChange.konva", _clearGetShadowRGBACache);
+Shape.prototype.on("fillPriorityChange.konva fillPatternImageChange.konva fillPatternRepeatChange.konva fillPatternScaleXChange.konva fillPatternScaleYChange.konva fillPatternOffsetXChange.konva fillPatternOffsetYChange.konva fillPatternXChange.konva fillPatternYChange.konva fillPatternRotationChange.konva", _clearFillPatternCache);
+Shape.prototype.on("fillPriorityChange.konva fillLinearGradientColorStopsChange.konva fillLinearGradientStartPointXChange.konva fillLinearGradientStartPointYChange.konva fillLinearGradientEndPointXChange.konva fillLinearGradientEndPointYChange.konva", _clearLinearGradientCache);
+Shape.prototype.on("fillPriorityChange.konva fillRadialGradientColorStopsChange.konva fillRadialGradientStartPointXChange.konva fillRadialGradientStartPointYChange.konva fillRadialGradientEndPointXChange.konva fillRadialGradientEndPointYChange.konva fillRadialGradientStartRadiusChange.konva fillRadialGradientEndRadiusChange.konva", _clearRadialGradientCache);
 Factory.addGetterSetter(Shape, "stroke", void 0, getStringOrGradientValidator());
 Factory.addGetterSetter(Shape, "strokeWidth", 2, getNumberValidator());
 Factory.addGetterSetter(Shape, "fillAfterStrokeEnabled", false);
@@ -5009,7 +5022,7 @@ Factory.backCompat(Shape, {
   setDrawHitFunc: "setHitFunc"
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Layer.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Layer.js
 var BEFORE_DRAW = "beforeDraw";
 var DRAW = "draw";
 var INTERSECTION_OFFSETS = [
@@ -5304,7 +5317,7 @@ Factory.addGetterSetter(Layer, "imageSmoothingEnabled", true);
 Factory.addGetterSetter(Layer, "clearBeforeDraw", true);
 Factory.addGetterSetter(Layer, "hitGraphEnabled", true, getBooleanValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/FastLayer.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/FastLayer.js
 var FastLayer = class extends Layer {
   constructor(attrs) {
     super(attrs);
@@ -5315,7 +5328,7 @@ var FastLayer = class extends Layer {
 FastLayer.prototype.nodeType = "FastLayer";
 _registerNode(FastLayer);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Group.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Group.js
 var Group = class extends Container {
   _validateAdd(child) {
     const type = child.getType();
@@ -5327,7 +5340,7 @@ var Group = class extends Container {
 Group.prototype.nodeType = "Group";
 _registerNode(Group);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Animation.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Animation.js
 var now = (function() {
   if (glob.performance && glob.performance.now) {
     return function() {
@@ -5467,7 +5480,7 @@ Animation.animations = [];
 Animation.animIdCounter = 0;
 Animation.animRunning = false;
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/Tween.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/Tween.js
 var blacklist = {
   node: 1,
   duration: 1,
@@ -5946,7 +5959,7 @@ var Easings = {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/_CoreInternals.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/_CoreInternals.js
 var Konva2 = Util._assign(Konva, {
   Util,
   Transform,
@@ -5967,7 +5980,7 @@ var Konva2 = Util._assign(Konva, {
   Canvas
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Arc.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Arc.js
 var Arc = class extends Shape {
   _sceneFunc(context) {
     const angle = Konva.getAngle(this.angle()), clockwise = this.clockwise();
@@ -6024,7 +6037,7 @@ Factory.addGetterSetter(Arc, "outerRadius", 0, getNumberValidator());
 Factory.addGetterSetter(Arc, "angle", 0, getNumberValidator());
 Factory.addGetterSetter(Arc, "clockwise", false, getBooleanValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Line.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Line.js
 function getControlPoints(x0, y0, x1, y1, x2, y2, t) {
   const d01 = Math.sqrt(Math.pow(x1 - x0, 2) + Math.pow(y1 - y0, 2)), d12 = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2)), fa = t * d01 / (d01 + d12), fb = t * d12 / (d01 + d12), p1x = x1 - fa * (x2 - x0), p1y = y1 - fa * (y2 - y0), p2x = x1 + fb * (x2 - x0), p2y = y1 + fb * (y2 - y0);
   return [p1x, p1y, p2x, p2y];
@@ -6203,7 +6216,7 @@ Factory.addGetterSetter(Line, "bezier", false);
 Factory.addGetterSetter(Line, "tension", 0, getNumberValidator());
 Factory.addGetterSetter(Line, "points", [], getNumberArrayValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/BezierFunctions.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/BezierFunctions.js
 var tValues = [
   [],
   [],
@@ -6991,7 +7004,7 @@ var t2length = (length, totalLength, func) => {
   return t;
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Path.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Path.js
 var Path = class _Path extends Shape {
   constructor(config) {
     super(config);
@@ -7647,7 +7660,7 @@ Path.prototype._attrsAffectingSize = ["data"];
 _registerNode(Path);
 Factory.addGetterSetter(Path, "data");
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Arrow.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Arrow.js
 var Arrow = class extends Line {
   _sceneFunc(ctx) {
     super._sceneFunc(ctx);
@@ -7741,7 +7754,7 @@ Factory.addGetterSetter(Arrow, "pointerWidth", 10, getNumberValidator());
 Factory.addGetterSetter(Arrow, "pointerAtBeginning", false);
 Factory.addGetterSetter(Arrow, "pointerAtEnding", true);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Circle.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Circle.js
 var Circle = class extends Shape {
   _sceneFunc(context) {
     context.beginPath();
@@ -7772,7 +7785,7 @@ Circle.prototype._attrsAffectingSize = ["radius"];
 _registerNode(Circle);
 Factory.addGetterSetter(Circle, "radius", 0, getNumberValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Ellipse.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Ellipse.js
 var Ellipse = class extends Shape {
   _sceneFunc(context) {
     const rx = this.radiusX(), ry = this.radiusY();
@@ -7807,7 +7820,7 @@ Factory.addComponentsGetterSetter(Ellipse, "radius", ["x", "y"]);
 Factory.addGetterSetter(Ellipse, "radiusX", 0, getNumberValidator());
 Factory.addGetterSetter(Ellipse, "radiusY", 0, getNumberValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Image.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Image.js
 var Image2 = class _Image extends Shape {
   constructor(attrs) {
     super(attrs);
@@ -7931,7 +7944,7 @@ Factory.addGetterSetter(Image2, "cropY", 0, getNumberValidator());
 Factory.addGetterSetter(Image2, "cropWidth", 0, getNumberValidator());
 Factory.addGetterSetter(Image2, "cropHeight", 0, getNumberValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Label.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Label.js
 var ATTR_CHANGE_LIST = [
   "fontFamily",
   "fontSize",
@@ -8100,7 +8113,7 @@ Factory.addGetterSetter(Tag, "pointerWidth", 0, getNumberValidator());
 Factory.addGetterSetter(Tag, "pointerHeight", 0, getNumberValidator());
 Factory.addGetterSetter(Tag, "cornerRadius", 0, getNumberOrArrayOfNumbersValidator(4));
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Rect.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Rect.js
 var Rect = class extends Shape {
   _sceneFunc(context) {
     const cornerRadius = this.cornerRadius(), width = this.width(), height = this.height();
@@ -8118,7 +8131,7 @@ Rect.prototype.className = "Rect";
 _registerNode(Rect);
 Factory.addGetterSetter(Rect, "cornerRadius", 0, getNumberOrArrayOfNumbersValidator(4));
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/RegularPolygon.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/RegularPolygon.js
 var RegularPolygon = class extends Shape {
   _sceneFunc(context) {
     const points = this._getPoints(), radius = this.radius(), sides = this.sides(), cornerRadius = this.cornerRadius();
@@ -8186,7 +8199,7 @@ Factory.addGetterSetter(RegularPolygon, "radius", 0, getNumberValidator());
 Factory.addGetterSetter(RegularPolygon, "sides", 0, getNumberValidator());
 Factory.addGetterSetter(RegularPolygon, "cornerRadius", 0, getNumberOrArrayOfNumbersValidator(4));
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Ring.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Ring.js
 var PIx2 = Math.PI * 2;
 var Ring = class extends Shape {
   _sceneFunc(context) {
@@ -8217,7 +8230,7 @@ _registerNode(Ring);
 Factory.addGetterSetter(Ring, "innerRadius", 0, getNumberValidator());
 Factory.addGetterSetter(Ring, "outerRadius", 0, getNumberValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Sprite.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Sprite.js
 var Sprite = class extends Shape {
   constructor(config) {
     super(config);
@@ -8319,7 +8332,7 @@ Factory.backCompat(Sprite, {
   setIndex: "setFrameIndex"
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Star.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Star.js
 var Star = class extends Shape {
   _sceneFunc(context) {
     const innerRadius = this.innerRadius(), outerRadius = this.outerRadius(), numPoints = this.numPoints();
@@ -8355,7 +8368,7 @@ Factory.addGetterSetter(Star, "numPoints", 5, getNumberValidator());
 Factory.addGetterSetter(Star, "innerRadius", 0, getNumberValidator());
 Factory.addGetterSetter(Star, "outerRadius", 0, getNumberValidator());
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Text.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Text.js
 function stringToArray(string) {
   return [...string].reduce((acc, char, index, array) => {
     if (/\p{Emoji}/u.test(char)) {
@@ -8795,7 +8808,7 @@ Factory.addGetterSetter(Text, "textDecoration", "");
 Factory.addGetterSetter(Text, "underlineOffset", void 0, getNumberValidator());
 Factory.addGetterSetter(Text, "charRenderFunc", void 0);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/TextPath.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/TextPath.js
 var EMPTY_STRING2 = "";
 var NORMAL2 = "normal";
 function _fillFunc3(context) {
@@ -8938,7 +8951,7 @@ var TextPath = class extends Shape {
       });
       width += chars[i].width;
     }
-    const { height } = this._getTextSize(this.attrs.text);
+    const { width: fullTextWidth, height } = this._getTextSize(this.attrs.text);
     this.textWidth = width;
     this.textHeight = height;
     this.glyphInfo = [];
@@ -8948,6 +8961,7 @@ var TextPath = class extends Shape {
     const letterSpacing = this.letterSpacing();
     const align = this.align();
     const kerningFunc = this.kerningFunc();
+    const kerningAdjustment = Math.max(0, width - fullTextWidth);
     const textWidth = Math.max(this.textWidth + ((this.attrs.text || "").length - 1) * letterSpacing, 0);
     let offset = 0;
     if (align === "center") {
@@ -8967,7 +8981,8 @@ var TextPath = class extends Shape {
         const numberOfSpaces = this.text().split(" ").length - 1;
         glyphWidth += (this.pathLength - textWidth) / numberOfSpaces;
       }
-      const charEndPoint = this._getPointAtLength(offsetToGlyph + glyphWidth);
+      const charEndLength = offsetToGlyph + glyphWidth;
+      const charEndPoint = this._getPointAtLength(charEndLength > this.pathLength && charEndLength - this.pathLength <= kerningAdjustment ? this.pathLength : charEndLength);
       if (!charEndPoint) {
         return;
       }
@@ -9058,7 +9073,7 @@ Factory.addGetterSetter(TextPath, "text", EMPTY_STRING2);
 Factory.addGetterSetter(TextPath, "textDecoration", "");
 Factory.addGetterSetter(TextPath, "kerningFunc", void 0);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Transformer.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Transformer.js
 var EVENTS_NAME = "tr-konva";
 var ATTR_CHANGE_LIST3 = [
   "resizeEnabledChange",
@@ -9180,6 +9195,7 @@ var Transformer = class extends Group {
     super(config);
     this._movingAnchorName = null;
     this._transforming = false;
+    this._elementsCreated = false;
     this._createElements();
     this._handleMouseMove = this._handleMouseMove.bind(this);
     this._handleMouseUp = this._handleMouseUp.bind(this);
@@ -9395,6 +9411,7 @@ var Transformer = class extends Group {
       this._createAnchor(name);
     });
     this._createAnchor("rotater");
+    this._elementsCreated = true;
   }
   _createAnchor(name) {
     const anchor = new Rect({
@@ -9972,6 +9989,13 @@ var Transformer = class extends Group {
     this._removeEvents();
     return this;
   }
+  add(...children) {
+    if (this._elementsCreated) {
+      Util.error("You cannot add external nodes to the Transformer. Use tr.nodes([node]) instead.");
+      return this;
+    }
+    return super.add(...children);
+  }
   toObject() {
     return Node.prototype.toObject.call(this);
   }
@@ -10042,7 +10066,7 @@ Factory.backCompat(Transformer, {
   enabledHandlers: "enabledAnchors"
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/shapes/Wedge.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/shapes/Wedge.js
 var Wedge = class extends Shape {
   _sceneFunc(context) {
     context.beginPath();
@@ -10077,7 +10101,7 @@ Factory.backCompat(Wedge, {
   setAngleDeg: "setAngle"
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Blur.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Blur.js
 function BlurStack() {
   this.r = 0;
   this.g = 0;
@@ -10769,7 +10793,7 @@ var Blur = function Blur2(imageData) {
 };
 Factory.addGetterSetter(Node, "blurRadius", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Brighten.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Brighten.js
 var Brighten = function(imageData) {
   const brightness = this.brightness() * 255, data = imageData.data, len = data.length;
   for (let i = 0; i < len; i += 4) {
@@ -10780,7 +10804,7 @@ var Brighten = function(imageData) {
 };
 Factory.addGetterSetter(Node, "brightness", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Brightness.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Brightness.js
 var Brightness = function(imageData) {
   const brightness = this.brightness(), data = imageData.data, len = data.length;
   for (let i = 0; i < len; i += 4) {
@@ -10790,7 +10814,7 @@ var Brightness = function(imageData) {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Contrast.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Contrast.js
 var Contrast = function(imageData) {
   const adjust = Math.pow((this.contrast() + 100) / 100, 2);
   const data = imageData.data, nPixels = data.length;
@@ -10824,7 +10848,7 @@ var Contrast = function(imageData) {
 };
 Factory.addGetterSetter(Node, "contrast", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Emboss.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Emboss.js
 var Emboss = function(imageData) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _j;
   const data = imageData.data;
@@ -10923,7 +10947,7 @@ Factory.addGetterSetter(Node, "embossWhiteLevel", 0.5, getNumberValidator(), Fac
 Factory.addGetterSetter(Node, "embossDirection", "top-left", void 0, Factory.afterSetFilter);
 Factory.addGetterSetter(Node, "embossBlend", false, void 0, Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Enhance.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Enhance.js
 function remap(fromValue, fromMin, fromMax, toMin, toMax) {
   const fromRange = fromMax - fromMin, toRange = toMax - toMin;
   if (fromRange === 0) {
@@ -11002,7 +11026,7 @@ var Enhance = function(imageData) {
 };
 Factory.addGetterSetter(Node, "enhance", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Grayscale.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Grayscale.js
 var Grayscale = function(imageData) {
   const data = imageData.data, len = data.length;
   for (let i = 0; i < len; i += 4) {
@@ -11013,7 +11037,7 @@ var Grayscale = function(imageData) {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/HSL.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/HSL.js
 Factory.addGetterSetter(Node, "hue", 0, getNumberValidator(), Factory.afterSetFilter);
 Factory.addGetterSetter(Node, "saturation", 0, getNumberValidator(), Factory.afterSetFilter);
 Factory.addGetterSetter(Node, "luminance", 0, getNumberValidator(), Factory.afterSetFilter);
@@ -11036,7 +11060,7 @@ var HSL = function(imageData) {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/HSV.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/HSV.js
 var HSV = function(imageData) {
   const data = imageData.data, nPixels = data.length, v = Math.pow(2, this.value()), s = Math.pow(2, this.saturation()), h = Math.abs(this.hue() + 360) % 360;
   const vsu = v * s * Math.cos(h * Math.PI / 180), vsw = v * s * Math.sin(h * Math.PI / 180);
@@ -11058,7 +11082,7 @@ Factory.addGetterSetter(Node, "hue", 0, getNumberValidator(), Factory.afterSetFi
 Factory.addGetterSetter(Node, "saturation", 0, getNumberValidator(), Factory.afterSetFilter);
 Factory.addGetterSetter(Node, "value", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Invert.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Invert.js
 var Invert = function(imageData) {
   const data = imageData.data, len = data.length;
   for (let i = 0; i < len; i += 4) {
@@ -11068,7 +11092,7 @@ var Invert = function(imageData) {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Kaleidoscope.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Kaleidoscope.js
 var ToPolar = function(src, dst, opt) {
   const srcPixels = src.data, dstPixels = dst.data, xSize = src.width, ySize = src.height, xMid = opt.polarCenterX || xSize / 2, yMid = opt.polarCenterY || ySize / 2;
   let rMax = Math.sqrt(xMid * xMid + yMid * yMid);
@@ -11197,7 +11221,7 @@ var Kaleidoscope = function(imageData) {
 Factory.addGetterSetter(Node, "kaleidoscopePower", 2, getNumberValidator(), Factory.afterSetFilter);
 Factory.addGetterSetter(Node, "kaleidoscopeAngle", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Mask.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Mask.js
 function pixelAt(idata, x, y) {
   let idx = (y * idata.width + x) * 4;
   const d = [];
@@ -11342,7 +11366,7 @@ var Mask = function(imageData) {
 };
 Factory.addGetterSetter(Node, "threshold", 0, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Noise.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Noise.js
 var Noise = function(imageData) {
   const amount = this.noise() * 255, data = imageData.data, nPixels = data.length, half = amount / 2;
   for (let i = 0; i < nPixels; i += 4) {
@@ -11353,7 +11377,7 @@ var Noise = function(imageData) {
 };
 Factory.addGetterSetter(Node, "noise", 0.2, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Pixelate.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Pixelate.js
 var Pixelate = function(imageData) {
   let pixelSize = Math.ceil(this.pixelSize()), width = imageData.width, height = imageData.height, nBinsX = Math.ceil(width / pixelSize), nBinsY = Math.ceil(height / pixelSize), data = imageData.data;
   if (pixelSize <= 0) {
@@ -11411,7 +11435,7 @@ var Pixelate = function(imageData) {
 };
 Factory.addGetterSetter(Node, "pixelSize", 8, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Posterize.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Posterize.js
 var Posterize = function(imageData) {
   const levels = Math.round(this.levels() * 254) + 1, data = imageData.data, len = data.length, scale = 255 / levels;
   for (let i = 0; i < len; i += 1) {
@@ -11420,7 +11444,7 @@ var Posterize = function(imageData) {
 };
 Factory.addGetterSetter(Node, "levels", 0.5, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/RGB.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/RGB.js
 var RGB = function(imageData) {
   const data = imageData.data, nPixels = data.length, red = this.red(), green = this.green(), blue = this.blue();
   for (let i = 0; i < nPixels; i += 4) {
@@ -11453,7 +11477,7 @@ Factory.addGetterSetter(Node, "green", 0, function(val) {
 });
 Factory.addGetterSetter(Node, "blue", 0, RGBComponent, Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/RGBA.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/RGBA.js
 var RGBA = function(imageData) {
   const data = imageData.data, nPixels = data.length, red = this.red(), green = this.green(), blue = this.blue(), alpha = this.alpha();
   for (let i = 0; i < nPixels; i += 4) {
@@ -11495,7 +11519,7 @@ Factory.addGetterSetter(Node, "alpha", 1, function(val) {
   }
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Sepia.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Sepia.js
 var Sepia = function(imageData) {
   const data = imageData.data, nPixels = data.length;
   for (let i = 0; i < nPixels; i += 4) {
@@ -11508,7 +11532,7 @@ var Sepia = function(imageData) {
   }
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Solarize.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Solarize.js
 var Solarize = function(imageData) {
   const threshold = 128;
   const d = imageData.data;
@@ -11524,7 +11548,7 @@ var Solarize = function(imageData) {
   return imageData;
 };
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/filters/Threshold.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/filters/Threshold.js
 var Threshold = function(imageData) {
   const level = this.threshold() * 255, data = imageData.data, len = data.length;
   for (let i = 0; i < len; i += 1) {
@@ -11533,7 +11557,7 @@ var Threshold = function(imageData) {
 };
 Factory.addGetterSetter(Node, "threshold", 0.5, getNumberValidator(), Factory.afterSetFilter);
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/_FullInternals.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/_FullInternals.js
 var Konva3 = Konva2.Util._assign(Konva2, {
   Arc,
   Arrow,
@@ -11577,7 +11601,7 @@ var Konva3 = Konva2.Util._assign(Konva2, {
   }
 });
 
-// node_modules/.pnpm/konva@10.2.0/node_modules/konva/lib/index.js
+// node_modules/.pnpm/konva@10.2.3/node_modules/konva/lib/index.js
 var lib_default = Konva3;
 
 // src/Settings.ts

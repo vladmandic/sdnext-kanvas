@@ -6,6 +6,7 @@
     "output": "build.log"
   },
   "profiles": {
+    "production": ["compile", "lint"],
     "development": ["serve", "watch", "compile", "lint"]
   },
   "watch": {

@@ -98,6 +98,7 @@ const typescriptConfig = defineConfig([
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-shadow': 'error',
       '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-for-in-array': 'off',
     },
   },
 ]);

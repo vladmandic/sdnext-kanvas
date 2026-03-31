@@ -8,7 +8,7 @@ export default class Upload {
   }
 
   async pasteImage(e: ClipboardEvent | null = null) {
-    let items: any = [];
+    let items: DataTransferItemList | ClipboardItems = [];
     if (e instanceof ClipboardEvent) {
       items = e.clipboardData?.items || [];
     } else {
@@ -21,12 +21,12 @@ export default class Upload {
     for (const i in items) {
       const item = items[i];
       let blob;
-      if (item?.types) { // navigator.clipboard
-        for (const type of item.types) {
-          if (type.startsWith('image/')) blob = await item.getType(type);
+      if ((item as ClipboardItem)?.types) { // navigator.clipboard
+        for (const type of (item as ClipboardItem).types) {
+          if (type.startsWith('image/')) blob = await (item as ClipboardItem).getType(type);
         }
-      } else if (item?.type?.startsWith('image/')) { // clipboard paste event
-        blob = item.getAsFile();
+      } else if ((item as DataTransferItem)?.type?.startsWith('image/')) { // clipboard paste event
+        blob = (item as DataTransferItem).getAsFile();
       }
       if (!blob) continue;
       const url = URL.createObjectURL(blob);
