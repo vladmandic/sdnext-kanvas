@@ -11,6 +11,7 @@ import Pan from './Pan';
 import Shapes from './Shapes';
 import Footer from './Footer';
 import Stages from './Stages';
+import History from './History';
 
 export default class Kanvas {
   initial = true;
@@ -31,7 +32,7 @@ export default class Kanvas {
   selected!: Konva.Node;
   // modes
   selectedLayer: 'image' | 'mask' = 'image';
-  imageMode: 'none' | 'upload' | 'resize' | 'crop' | 'paint' | 'filters' | 'text' | 'outpaint' = 'upload';
+  imageMode: 'none' | 'upload' | 'resize' | 'crop' | 'paint' | 'wand' | 'filters' | 'text' | 'outpaint' = 'upload';
   // variables
   opacity = 1;
   // class extensions
@@ -47,6 +48,7 @@ export default class Kanvas {
   shapes: Shapes;
   stages: Stages;
   footer: Footer;
+  history: History;
 
   // callbacks
   onchange: () => void;
@@ -100,6 +102,7 @@ export default class Kanvas {
     this.container = canvasEl;
 
     this.stages = new Stages(this);
+    this.history = new History(this);
 
     // store initial width/height from opts or defaults
     const stageWidth = opts.width ?? 1024;
@@ -128,9 +131,10 @@ export default class Kanvas {
     // init events
     this.helpers.bindEvents();
     this.helpers.bindStage();
+    this.shapes.drawShapes();
     this.toolbar.bindControls();
     this.pan.bindPan();
-    this.shapes.drawShapes();
+    this.history.init();
 
     // register clipboard paste
     this.wrapper.focus();
@@ -190,6 +194,7 @@ export default class Kanvas {
     this.layer.draw();
     this.helpers.showMessage(`Node removed: ${nodeType}`);
     this.shapes.refresh();
+    this.history.capture(`Remove ${nodeType}`);
   }
 
   stopActions() {
@@ -214,6 +219,7 @@ export default class Kanvas {
       this.imageGroup.add(img);
       this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
       this.resize.resizeStageToFit(img, true);
+      this.history.capture('Add image');
     };
     const onError = () => {
       this.helpers.showMessage('Error loading image');

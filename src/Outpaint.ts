@@ -74,5 +74,6 @@ export default class Outpaint {
     }
     this.k.layer.batchDraw();
     this.outpaintActive = true;
+    this.k.history.capture('Outpaint apply');
   }
 }

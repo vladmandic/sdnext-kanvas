@@ -123,7 +123,9 @@ export default class Stages {
     this.panelEl.appendChild(this.listEl);
     this.panelEl.classList.toggle('collapsed', this.collapsed);
 
-    parentEl.prepend(this.panelEl);
+    const shapesPanel = parentEl.querySelector('.kanvas-shapes');
+    if (shapesPanel) parentEl.insertBefore(this.panelEl, shapesPanel);
+    else parentEl.appendChild(this.panelEl);
     this.renderOverlay();
   }
 
@@ -282,6 +284,7 @@ export default class Stages {
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
+    this.k.history.capture('Create stage');
     return id;
   }
 
@@ -333,6 +336,7 @@ export default class Stages {
       this.k.shapes?.refresh();
     }
     this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
+    this.k.history.capture('Delete stage');
     return true;
   }
 

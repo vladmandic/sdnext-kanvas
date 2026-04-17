@@ -8,11 +8,14 @@ export default class Toolbar {
   btnUpload: HTMLElement | null = null;
   btnPaste: HTMLElement | null = null;
   btnRemove: HTMLElement | null = null;
+  btnUndo: HTMLElement | null = null;
+  btnRedo: HTMLElement | null = null;
   btnReset: HTMLElement | null = null;
   btnRefresh: HTMLElement | null = null;
   btnResize: HTMLElement | null = null;
   btnCrop: HTMLElement | null = null;
   btnPaint: HTMLElement | null = null;
+  btnWand: HTMLElement | null = null;
   btnFilters: HTMLElement | null = null;
   btnText: HTMLElement | null = null;
   btnOutpaint: HTMLElement | null = null;
@@ -30,6 +33,8 @@ export default class Toolbar {
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\udb82\udc7c</span>
       <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\udb86\ude00</span>
       <span class="kanvas-button" title="Remove currently selected object" id="${this.k.containerId}-button-remove">\udb85\udc18</span>
+      <span class="kanvas-button" title="Undo" id="${this.k.containerId}-button-undo">⟲</span>
+      <span class="kanvas-button" title="Redo" id="${this.k.containerId}-button-redo">⟳</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uf1b8</span>
 
       <span id="${this.k.containerId}-active-controls" style="display: none;">
@@ -42,6 +47,7 @@ export default class Toolbar {
         <span class="kanvas-button" title="Move or resize currently selected image" id="${this.k.containerId}-button-resize">\udb81\ude55</span>
         <span class="kanvas-button" title="Crop currently selected image" id="${this.k.containerId}-button-crop">\udb80\udd9e</span>
         <span class="kanvas-button" title="Free Paint in currently selected layer" id="${this.k.containerId}-button-paint">\uf1fc</span>
+        <span class="kanvas-button" title="Magic wand paint in active layer" id="${this.k.containerId}-button-wand">\uebcf</span>
         <span class="kanvas-button" title="Outpaint" id="${this.k.containerId}-button-outpaint">\udb80\udc4c</span>
         <span class="kanvas-button" title="Apply filters on currently selected image" id="${this.k.containerId}-button-filters">\udb80\udef0</span>
         <span class="kanvas-button" title="Draw text" id="${this.k.containerId}-button-text">\udb80\ude84</span>
@@ -49,6 +55,7 @@ export default class Toolbar {
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
           <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
+          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
           <select id="${this.k.containerId}-brush-mode" class="kanvas-select" title="Brush mode">
             <option value="source-over">source-over</option>
@@ -67,6 +74,8 @@ export default class Toolbar {
             <option value="luminosity">luminosity</option>
           </select>
           <input type="color" id="${this.k.containerId}-brush-color" class="kanvas-colorpicker" value="#ffffff" title="Brush color" />
+          <span class="kanvas-text" title="Sample merged image+mask for wand matching">merged</span>
+          <input type="checkbox" id="${this.k.containerId}-wand-sample-merged" class="kanvas-checkbox" title="Sample merged image+mask for wand matching" />
         </span>
 
         <span id="${this.k.containerId}-outpaint-controls" class="kanvas-section">
@@ -105,15 +114,6 @@ export default class Toolbar {
       </span>
 
       <span class="kanvas-separator"> | </span>
-      <span class="kanvas-size">
-        <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\udb82\ude68</span>
-        <label for="${this.k.containerId}-image-width"></label>
-        <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
-        <label for="${this.k.containerId}-image-width"></label>
-        <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
-      </span>
-
-      <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\ueb52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\udb80\udefd</span>
     `;
@@ -124,6 +124,7 @@ export default class Toolbar {
     document.getElementById(`${this.k.containerId}-button-resize`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-button-crop`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-button-paint`)?.classList.remove('active');
+    document.getElementById(`${this.k.containerId}-button-wand`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-button-filters`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-button-text`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.remove('active');
@@ -141,6 +142,11 @@ export default class Toolbar {
 
   async hide() {
     if (this.k.settings.settings.allowHide) this.el.classList.remove('active');
+  }
+
+  updateHistoryButtons(canUndo: boolean, canRedo: boolean) {
+    this.btnUndo?.classList.toggle('disabled', !canUndo);
+    this.btnRedo?.classList.toggle('disabled', !canRedo);
   }
 
   async bindControls() {
@@ -194,6 +200,8 @@ export default class Toolbar {
     this.btnPaste = document.getElementById(`${this.k.containerId}-button-paste`);
     this.btnUpload = document.getElementById(`${this.k.containerId}-button-upload`);
     this.btnRemove = document.getElementById(`${this.k.containerId}-button-remove`);
+    this.btnUndo = document.getElementById(`${this.k.containerId}-button-undo`);
+    this.btnRedo = document.getElementById(`${this.k.containerId}-button-redo`);
     this.btnReset = document.getElementById(`${this.k.containerId}-button-reset`);
     this.btnRefresh = document.getElementById(`${this.k.containerId}-button-refresh`);
     this.btnUpload?.addEventListener('click', async (e) => {
@@ -214,11 +222,22 @@ export default class Toolbar {
       e.stopPropagation();
       this.k.removeNode(this.k.selected);
     });
+    this.btnUndo?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.history.undo();
+    });
+    this.btnRedo?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.history.redo();
+    });
     this.btnReset?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.initialize();
       this.btnSelectImage?.click(); // select image layer by default after reset
+      this.k.history.capture('Reset stage');
     });
     this.btnRefresh?.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -301,6 +320,7 @@ export default class Toolbar {
 
     // group: paint,text
     this.btnPaint = document.getElementById(`${this.k.containerId}-button-paint`);
+    this.btnWand = document.getElementById(`${this.k.containerId}-button-wand`);
     this.btnPaint?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -309,6 +329,16 @@ export default class Toolbar {
       this.k.paint.startPaint();
       this.resetButtons();
       this.btnPaint?.classList.add('active');
+      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+    });
+    this.btnWand?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.imageMode = 'wand';
+      this.k.helpers.showMessage('Image mode=wand');
+      this.k.paint.startWand();
+      this.resetButtons();
+      this.btnWand?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
@@ -328,6 +358,11 @@ export default class Toolbar {
       e.stopPropagation();
       this.k.paint.brushSize = parseInt((e.target as HTMLInputElement).value, 10);
     });
+    document.getElementById(`${this.k.containerId}-wand-tolerance`)?.addEventListener('input', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.paint.wandTolerance = parseInt((e.target as HTMLInputElement).value, 10);
+    });
     document.getElementById(`${this.k.containerId}-brush-opacity`)?.addEventListener('input', async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -342,6 +377,11 @@ export default class Toolbar {
       e.preventDefault();
       e.stopPropagation();
       this.k.paint.brushColor = (e.target as HTMLInputElement).value;
+    });
+    document.getElementById(`${this.k.containerId}-wand-sample-merged`)?.addEventListener('input', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.paint.wandSampleMerged = (e.target as HTMLInputElement).checked;
     });
     document.getElementById(`${this.k.containerId}-text-font`)?.addEventListener('input', async (e) => {
       e.preventDefault();
@@ -407,5 +447,18 @@ export default class Toolbar {
       e.stopPropagation();
       this.k.filter.filterName = (e.target as HTMLSelectElement).value;
     });
+
+    this.k.wrapper.addEventListener('keydown', (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        this.k.history.undo();
+      } else if ((e.key.toLowerCase() === 'z' && e.shiftKey) || e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.k.history.redo();
+      }
+    });
+
+    this.updateHistoryButtons(this.k.history.canUndo(), this.k.history.canRedo());
   }
 }

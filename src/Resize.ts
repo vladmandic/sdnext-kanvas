@@ -7,6 +7,7 @@ export default class Resize {
   debounce = 200;
   debounceFit = 0;
   debounceResize = 0;
+  historyResizeDebounce = 0;
   scale = 1;
 
   constructor(k: Kanvas) {
@@ -130,6 +131,8 @@ export default class Resize {
     this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
+    clearTimeout(this.historyResizeDebounce);
+    this.historyResizeDebounce = window.setTimeout(() => this.k.history.capture('Resize stage'), 250);
   }
 
   startResize() {
@@ -150,6 +153,7 @@ export default class Resize {
       this.k.layer.add(transformer);
       image.on('transform', () => this.resizeStageToFit(image));
       image.on('dragmove', () => this.resizeStageToFit(image));
+      image.on('transformend dragend', () => this.k.history.capture('Transform image'));
     });
   }
 
@@ -169,6 +173,7 @@ export default class Resize {
       height: box.height,
     });
     this.k.layer.batchDraw();
+    this.k.history.capture('Crop object');
   }
 
   startClip() {

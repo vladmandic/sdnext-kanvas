@@ -4,6 +4,7 @@ import type Kanvas from './Kanvas';
 export default class Shapes {
   k: Kanvas;
   overlayEl: HTMLDivElement | null = null;
+  resolutionEl: HTMLDivElement | null = null;
   panelEl: HTMLDivElement | null = null;
   titleEl: HTMLDivElement | null = null;
   listEl: HTMLDivElement | null = null;
@@ -29,6 +30,17 @@ export default class Shapes {
     if (this.overlayEl && this.panelEl && this.titleEl && this.listEl) return;
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'kanvas-overlay';
+
+    this.resolutionEl = document.createElement('div');
+    this.resolutionEl.className = 'kanvas-resolution';
+    this.resolutionEl.innerHTML = `
+      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\udb82\ude68</span>
+      <label for="${this.k.containerId}-image-width"></label>
+      <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
+      <label for="${this.k.containerId}-image-height"></label>
+      <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
+    `;
+    this.overlayEl.appendChild(this.resolutionEl);
 
     this.panelEl = document.createElement('div');
     this.panelEl.className = 'kanvas-shapes';

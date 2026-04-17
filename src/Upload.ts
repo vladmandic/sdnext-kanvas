@@ -3,6 +3,7 @@ import type Kanvas from './Kanvas';
 
 export default class Upload {
   k: Kanvas;
+  opacityDebounce = 0;
   constructor(k: Kanvas) {
     this.k = k;
   }
@@ -61,6 +62,7 @@ export default class Upload {
         image.on('click', () => this.k.selectNode(image));
         this.k.stage.batchDraw();
         this.k.resize.resizeStageToFit(image);
+        this.k.history.capture('Paste image');
         if (this.k.helpers.isEmpty()) this.k.onchange();
       };
       dropImage.onerror = () => URL.revokeObjectURL(url);
@@ -112,6 +114,7 @@ export default class Upload {
         image.on('click', () => this.k.selectNode(image));
         this.k.stage.batchDraw();
         this.k.resize.resizeStageToFit(image);
+        this.k.history.capture('Upload image');
         if (shouldNotify) this.k.onchange();
       };
       dropImage.onerror = () => URL.revokeObjectURL(url);
@@ -135,6 +138,8 @@ export default class Upload {
     if (this.k.selected && this.k.selected instanceof Konva.Image) {
       this.k.selected.opacity(opacity);
       this.k.layer.batchDraw();
+      clearTimeout(this.opacityDebounce);
+      this.opacityDebounce = window.setTimeout(() => this.k.history.capture('Opacity change'), 250);
     }
   }
 }

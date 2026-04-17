@@ -54,6 +54,7 @@ export default class Filter {
         image.threshold(this.filterValue / 100);
       }
       image.draw();
+      this.k.history.capture(`Filter ${this.filterName}`);
     }
   }
 }

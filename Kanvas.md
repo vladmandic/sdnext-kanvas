@@ -9,6 +9,15 @@ with tools for upload, paste, paint, resize, crop, filters, text, outpaint, mask
 > Kanvas is enabled by default and available in unified **Control** interfaces in both *ModernUI* and *StandardUI*.  
 > Legacy **Img2Img** continues to use standard *Gradio* image handling.
 
+> [!TIP]
+> Quick shortcuts:
+>
+> | Action | Windows/Linux | macOS |
+> | --- | --- | --- |
+> | Undo | `Ctrl+Z` | `Cmd+Z` |
+> | Redo | `Ctrl+Shift+Z` or `Ctrl+Y` | `Cmd+Shift+Z` |
+> | Pan while zoomed | Hold `Ctrl` + drag | Hold `Ctrl` + drag |
+
 ### Stages
 
 Kanvas supports multiple stages.  
@@ -90,6 +99,20 @@ Each uploaded image becomes a separate object.
 
 Use *remove* to delete the currently selected object.
 
+### Undo / Redo
+
+Kanvas keeps a history of stage edits and supports both toolbar and keyboard undo/redo:
+- Use toolbar buttons: *Undo* (`⟲`) and *Redo* (`⟳`)
+- Keyboard:
+	- Undo: `Ctrl+Z` (or `Cmd+Z` on macOS)
+	- Redo: `Ctrl+Shift+Z`, `Cmd+Shift+Z`, or `Ctrl+Y`
+
+History tracks structural edits (for example upload, remove, resize, filters, text, outpaint, stage operations),
+as well as paint and wand operations.
+
+> [!TIP]
+> Magic wand drag is treated as a single history step, so one continuous drag can be undone in one action.
+
 Use *reset* to clear Kanvas and reinitialize stage state (including stage list) to defaults.
 
 ### Opacity
@@ -110,6 +133,24 @@ Use *crop* to crop selected image objects.
 ### Paint
 
 Use *free paint* to draw on the active layer with brush settings.
+
+### Magic Wand
+
+Use *Magic Wand* to fill contiguous regions in the active layer based on color similarity:
+- Works in both image and mask layers
+- Uses the current brush color, opacity, and blend mode
+- For mask layer painting, color is converted to grayscale
+- Tolerance controls how broadly similar pixels are included
+
+Wand matching source:
+- Default: samples colors from the active layer
+- Optional: enable *merged* to sample from combined image+mask view
+
+Typical flow:
+1. Select active layer (*image* or *mask*).
+2. Click *Magic Wand*.
+3. Adjust tolerance (and optionally enable *merged*).
+4. Click or drag on canvas to fill matching contiguous areas.
 
 ### Outpaint
 

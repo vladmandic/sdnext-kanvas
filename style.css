@@ -34,6 +34,29 @@
   opacity: 0.85;
 }
 
+.kanvas-resolution {
+  display: flex;
+  align-items: center;
+  gap: 0.2em;
+  border-bottom: 1px solid hsl(var(--kanvas-color), 10%, 20%);
+  padding: 0.1em 0.1em 0.35em 0.1em;
+}
+
+.kanvas-resolution .kanvas-button {
+  padding: 0.2em 0.3em;
+  margin-right: 0;
+}
+
+.kanvas-resolution .kanvas-sizebox {
+  font-size: 0.75em !important;
+  line-height: 1.6;
+  background: hsl(var(--kanvas-color), 0%, 22%);
+  color: hsl(var(--kanvas-color), 0%, 100%) !important;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  border: none;
+}
+
 .kanvas-shapes-titles {
   color: hsl(var(--kanvas-color), 0%, 90%);
   font-size: 0.82em;
@@ -244,6 +267,7 @@
 .kanvas-select:focus { outline: none; border: none; box-shadow: none; }
 
 .kanvas-colorpicker { width: calc(2 * var(--kanvas-size)); border: none; padding: 0; margin: 0; cursor: pointer; background: unset; vertical-align: middle; }
+.kanvas-checkbox { accent-color: hsl(var(--kanvas-color), 55%, 55%); vertical-align: middle; }
 
 .kanvas-textbox { border: none; background: hsl(var(--kanvas-color), 0%, 80%); width: calc(6 * var(--kanvas-size)); border-radius: 4px; }
 .kanvas-textbox:focus { outline: none; border: none; box-shadow: none; }

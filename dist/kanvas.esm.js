@@ -11768,11 +11768,14 @@ var Toolbar = class {
   btnUpload = null;
   btnPaste = null;
   btnRemove = null;
+  btnUndo = null;
+  btnRedo = null;
   btnReset = null;
   btnRefresh = null;
   btnResize = null;
   btnCrop = null;
   btnPaint = null;
+  btnWand = null;
   btnFilters = null;
   btnText = null;
   btnOutpaint = null;
@@ -11789,6 +11792,8 @@ var Toolbar = class {
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\u{F087C}</span>
       <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\u{F1A00}</span>
       <span class="kanvas-button" title="Remove currently selected object" id="${this.k.containerId}-button-remove">\u{F1418}</span>
+      <span class="kanvas-button" title="Undo" id="${this.k.containerId}-button-undo">\u27F2</span>
+      <span class="kanvas-button" title="Redo" id="${this.k.containerId}-button-redo">\u27F3</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uF1B8</span>
 
       <span id="${this.k.containerId}-active-controls" style="display: none;">
@@ -11801,6 +11806,7 @@ var Toolbar = class {
         <span class="kanvas-button" title="Move or resize currently selected image" id="${this.k.containerId}-button-resize">\u{F0655}</span>
         <span class="kanvas-button" title="Crop currently selected image" id="${this.k.containerId}-button-crop">\u{F019E}</span>
         <span class="kanvas-button" title="Free Paint in currently selected layer" id="${this.k.containerId}-button-paint">\uF1FC</span>
+        <span class="kanvas-button" title="Magic wand paint in active layer" id="${this.k.containerId}-button-wand">\uEBCF</span>
         <span class="kanvas-button" title="Outpaint" id="${this.k.containerId}-button-outpaint">\u{F004C}</span>
         <span class="kanvas-button" title="Apply filters on currently selected image" id="${this.k.containerId}-button-filters">\u{F02F0}</span>
         <span class="kanvas-button" title="Draw text" id="${this.k.containerId}-button-text">\u{F0284}</span>
@@ -11808,6 +11814,7 @@ var Toolbar = class {
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
           <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
+          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
           <select id="${this.k.containerId}-brush-mode" class="kanvas-select" title="Brush mode">
             <option value="source-over">source-over</option>
@@ -11826,6 +11833,8 @@ var Toolbar = class {
             <option value="luminosity">luminosity</option>
           </select>
           <input type="color" id="${this.k.containerId}-brush-color" class="kanvas-colorpicker" value="#ffffff" title="Brush color" />
+          <span class="kanvas-text" title="Sample merged image+mask for wand matching">merged</span>
+          <input type="checkbox" id="${this.k.containerId}-wand-sample-merged" class="kanvas-checkbox" title="Sample merged image+mask for wand matching" />
         </span>
 
         <span id="${this.k.containerId}-outpaint-controls" class="kanvas-section">
@@ -11864,15 +11873,6 @@ var Toolbar = class {
       </span>
 
       <span class="kanvas-separator"> | </span>
-      <span class="kanvas-size">
-        <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\u{F0A68}</span>
-        <label for="${this.k.containerId}-image-width"></label>
-        <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
-        <label for="${this.k.containerId}-image-width"></label>
-        <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
-      </span>
-
-      <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\uEB52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\u{F02FD}</span>
     `;
@@ -11882,6 +11882,7 @@ var Toolbar = class {
     document.getElementById(`${this.k.containerId}-button-resize`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-button-crop`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-button-paint`)?.classList.remove("active");
+    document.getElementById(`${this.k.containerId}-button-wand`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-button-filters`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-button-text`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.remove("active");
@@ -11897,6 +11898,10 @@ var Toolbar = class {
   }
   async hide() {
     if (this.k.settings.settings.allowHide) this.el.classList.remove("active");
+  }
+  updateHistoryButtons(canUndo, canRedo) {
+    this.btnUndo?.classList.toggle("disabled", !canUndo);
+    this.btnRedo?.classList.toggle("disabled", !canRedo);
   }
   async bindControls() {
     this.el.onclick = (e) => {
@@ -11945,6 +11950,8 @@ var Toolbar = class {
     this.btnPaste = document.getElementById(`${this.k.containerId}-button-paste`);
     this.btnUpload = document.getElementById(`${this.k.containerId}-button-upload`);
     this.btnRemove = document.getElementById(`${this.k.containerId}-button-remove`);
+    this.btnUndo = document.getElementById(`${this.k.containerId}-button-undo`);
+    this.btnRedo = document.getElementById(`${this.k.containerId}-button-redo`);
     this.btnReset = document.getElementById(`${this.k.containerId}-button-reset`);
     this.btnRefresh = document.getElementById(`${this.k.containerId}-button-refresh`);
     this.btnUpload?.addEventListener("click", async (e) => {
@@ -11965,11 +11972,22 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.removeNode(this.k.selected);
     });
+    this.btnUndo?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.history.undo();
+    });
+    this.btnRedo?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.history.redo();
+    });
     this.btnReset?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.initialize();
       this.btnSelectImage?.click();
+      this.k.history.capture("Reset stage");
     });
     this.btnRefresh?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -12042,6 +12060,7 @@ var Toolbar = class {
       this.btnCrop?.classList.add("active");
     });
     this.btnPaint = document.getElementById(`${this.k.containerId}-button-paint`);
+    this.btnWand = document.getElementById(`${this.k.containerId}-button-wand`);
     this.btnPaint?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -12050,6 +12069,16 @@ var Toolbar = class {
       this.k.paint.startPaint();
       this.resetButtons();
       this.btnPaint?.classList.add("active");
+      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+    });
+    this.btnWand?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.imageMode = "wand";
+      this.k.helpers.showMessage("Image mode=wand");
+      this.k.paint.startWand();
+      this.resetButtons();
+      this.btnWand?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
@@ -12069,6 +12098,11 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.paint.brushSize = parseInt(e.target.value, 10);
     });
+    document.getElementById(`${this.k.containerId}-wand-tolerance`)?.addEventListener("input", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.paint.wandTolerance = parseInt(e.target.value, 10);
+    });
     document.getElementById(`${this.k.containerId}-brush-opacity`)?.addEventListener("input", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -12083,6 +12117,11 @@ var Toolbar = class {
       e.preventDefault();
       e.stopPropagation();
       this.k.paint.brushColor = e.target.value;
+    });
+    document.getElementById(`${this.k.containerId}-wand-sample-merged`)?.addEventListener("input", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.k.paint.wandSampleMerged = e.target.checked;
     });
     document.getElementById(`${this.k.containerId}-text-font`)?.addEventListener("input", async (e) => {
       e.preventDefault();
@@ -12144,12 +12183,24 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.filter.filterName = e.target.value;
     });
+    this.k.wrapper.addEventListener("keydown", (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        this.k.history.undo();
+      } else if (e.key.toLowerCase() === "z" && e.shiftKey || e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        this.k.history.redo();
+      }
+    });
+    this.updateHistoryButtons(this.k.history.canUndo(), this.k.history.canRedo());
   }
 };
 
 // src/Upload.ts
 var Upload = class {
   k;
+  opacityDebounce = 0;
   constructor(k) {
     this.k = k;
   }
@@ -12207,6 +12258,7 @@ var Upload = class {
         image.on("click", () => this.k.selectNode(image));
         this.k.stage.batchDraw();
         this.k.resize.resizeStageToFit(image);
+        this.k.history.capture("Paste image");
         if (this.k.helpers.isEmpty()) this.k.onchange();
       };
       dropImage.onerror = () => URL.revokeObjectURL(url);
@@ -12257,6 +12309,7 @@ var Upload = class {
         image.on("click", () => this.k.selectNode(image));
         this.k.stage.batchDraw();
         this.k.resize.resizeStageToFit(image);
+        this.k.history.capture("Upload image");
         if (shouldNotify) this.k.onchange();
       };
       dropImage.onerror = () => URL.revokeObjectURL(url);
@@ -12278,6 +12331,8 @@ var Upload = class {
     if (this.k.selected && this.k.selected instanceof lib_default.Image) {
       this.k.selected.opacity(opacity);
       this.k.layer.batchDraw();
+      clearTimeout(this.opacityDebounce);
+      this.opacityDebounce = window.setTimeout(() => this.k.history.capture("Opacity change"), 250);
     }
   }
 };
@@ -12289,6 +12344,7 @@ var Resize = class {
   debounce = 200;
   debounceFit = 0;
   debounceResize = 0;
+  historyResizeDebounce = 0;
   scale = 1;
   constructor(k) {
     this.k = k;
@@ -12401,6 +12457,8 @@ var Resize = class {
     this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
+    clearTimeout(this.historyResizeDebounce);
+    this.historyResizeDebounce = window.setTimeout(() => this.k.history.capture("Resize stage"), 250);
   }
   startResize() {
     this.k.stopActions();
@@ -12420,6 +12478,7 @@ var Resize = class {
       this.k.layer.add(transformer);
       image.on("transform", () => this.resizeStageToFit(image));
       image.on("dragmove", () => this.resizeStageToFit(image));
+      image.on("transformend dragend", () => this.k.history.capture("Transform image"));
     });
   }
   stopResize() {
@@ -12437,6 +12496,7 @@ var Resize = class {
       height: box.height
     });
     this.k.layer.batchDraw();
+    this.k.history.capture("Crop object");
   }
   startClip() {
     this.k.stopActions();
@@ -12481,6 +12541,35 @@ function hexToGrayscale(hex) {
   const grayHex = gray.toString(16).padStart(2, "0");
   return `#${grayHex}${grayHex}${grayHex}`;
 }
+function hexToRgb(hex) {
+  const hexval = hex.replace("#", "");
+  return {
+    r: parseInt(hexval.substring(0, 2), 16),
+    g: parseInt(hexval.substring(2, 4), 16),
+    b: parseInt(hexval.substring(4, 6), 16)
+  };
+}
+function srgbToLinear(v) {
+  const n = v / 255;
+  if (n <= 0.04045) return n / 12.92;
+  return ((n + 0.055) / 1.055) ** 2.4;
+}
+function rgbToOklab(r, g, b) {
+  const lr = srgbToLinear(r);
+  const lg = srgbToLinear(g);
+  const lb = srgbToLinear(b);
+  const l = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb;
+  const m = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb;
+  const s = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb;
+  const l3 = Math.cbrt(Math.max(l, 0));
+  const m3 = Math.cbrt(Math.max(m, 0));
+  const s3 = Math.cbrt(Math.max(s, 0));
+  return {
+    l: 0.2104542553 * l3 + 0.793617785 * m3 - 0.0040720468 * s3,
+    a: 1.9779984951 * l3 - 2.428592205 * m3 + 0.4505937099 * s3,
+    b: 0.0259040371 * l3 + 0.7827717662 * m3 - 0.808675766 * s3
+  };
+}
 var Paint = class {
   k;
   brushSize;
@@ -12490,6 +12579,16 @@ var Paint = class {
   textFont = "Calibri";
   textValue = "Hello World";
   isPainting = false;
+  isWanding = false;
+  wandTolerance = 18;
+  wandSampleMerged = false;
+  wandThrottleMs = 50;
+  wandFeatherPx = 1;
+  wandLastAt = 0;
+  wandCapturePending = false;
+  wandCache = null;
+  wandDragCanvas = null;
+  wandDragCtx = null;
   lines = [];
   constructor(k) {
     this.k = k;
@@ -12498,7 +12597,8 @@ var Paint = class {
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
-    this.k.stage.on("mousedown touchstart", () => {
+    this.k.stage.off(".paint");
+    this.k.stage.on("mousedown.paint touchstart.paint", () => {
       if (this.k.imageMode !== "paint") {
         this.isPainting = false;
         return;
@@ -12525,12 +12625,13 @@ var Paint = class {
       this.lines.push(newLine);
       this.k.group.add(newLine);
     });
-    this.k.stage.on("mouseup touchend", () => {
+    this.k.stage.on("mouseup.paint touchend.paint", () => {
       if (this.isPainting) {
         this.isPainting = false;
+        this.k.history.capture("Paint stroke");
       }
     });
-    this.k.stage.on("mousemove touchmove", (e) => {
+    this.k.stage.on("mousemove.paint touchmove.paint", (e) => {
       if (this.k.imageMode !== "paint") return;
       if (!this.isPainting) return;
       e.evt.preventDefault();
@@ -12543,21 +12644,200 @@ var Paint = class {
       lastLine.points(newPoints);
     });
   }
+  mapWandTolerance() {
+    const n = Math.min(Math.max(this.wandTolerance, 0), 100) / 100;
+    return 8e-3 + n ** 2.2 * 0.48;
+  }
+  buildWandCache() {
+    this.k.stages.syncActiveLayerRefs();
+    const sourceCanvas = this.wandSampleMerged ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() }) : this.k.layer.toCanvas({ x: 0, y: 0, width: this.k.layer.width(), height: this.k.layer.height() });
+    const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) {
+      this.wandCache = null;
+      return;
+    }
+    const width = Math.round(sourceCanvas.width);
+    const height = Math.round(sourceCanvas.height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const pixels = width * height;
+    const l = new Float32Array(pixels);
+    const a = new Float32Array(pixels);
+    const b = new Float32Array(pixels);
+    const alpha = new Uint8Array(pixels);
+    for (let i = 0; i < pixels; i++) {
+      const p = i * 4;
+      const lab = rgbToOklab(data[p], data[p + 1], data[p + 2]);
+      l[i] = lab.l;
+      a[i] = lab.a;
+      b[i] = lab.b;
+      alpha[i] = data[p + 3];
+    }
+    this.wandCache = { width, height, l, a, b, alpha };
+  }
+  ensureWandDragCanvas() {
+    const width = Math.max(1, Math.round(this.k.stage.width()));
+    const height = Math.max(1, Math.round(this.k.stage.height()));
+    this.wandDragCanvas = document.createElement("canvas");
+    this.wandDragCanvas.width = width;
+    this.wandDragCanvas.height = height;
+    this.wandDragCtx = this.wandDragCanvas.getContext("2d", { willReadFrequently: true });
+  }
+  applyWandAt(x, y) {
+    if (!this.wandCache || !this.wandDragCtx) return false;
+    const { width, height, l, a, b, alpha } = this.wandCache;
+    if (x < 0 || y < 0 || x >= width || y >= height) return false;
+    const seed = y * width + x;
+    const tolerance = this.mapWandTolerance();
+    const tolerance2 = tolerance * tolerance;
+    const targetL = l[seed];
+    const targetA = a[seed];
+    const targetB = b[seed];
+    const targetAlpha = alpha[seed];
+    const visited = new Uint8Array(width * height);
+    const included = new Uint8Array(width * height);
+    const stack = [seed];
+    const region = [];
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    while (stack.length > 0) {
+      const idx = stack.pop();
+      if (visited[idx]) continue;
+      visited[idx] = 1;
+      const dL = l[idx] - targetL;
+      const dA = a[idx] - targetA;
+      const dB = b[idx] - targetB;
+      const d2 = dL * dL + dA * dA + dB * dB;
+      if (d2 > tolerance2) continue;
+      if (Math.abs(alpha[idx] - targetAlpha) > 64) continue;
+      included[idx] = 1;
+      region.push(idx);
+      const px = idx % width;
+      const py = Math.floor(idx / width);
+      if (px < minX) minX = px;
+      if (px > maxX) maxX = px;
+      if (py < minY) minY = py;
+      if (py > maxY) maxY = py;
+      if (px > 0) stack.push(idx - 1);
+      if (px < width - 1) stack.push(idx + 1);
+      if (py > 0) stack.push(idx - width);
+      if (py < height - 1) stack.push(idx + width);
+    }
+    if (region.length === 0) return false;
+    const bw = maxX - minX + 1;
+    const bh = maxY - minY + 1;
+    const imageData = new ImageData(bw, bh);
+    const fillColor = this.k.selectedLayer === "image" ? this.brushColor : hexToGrayscale(this.brushColor);
+    const rgb = hexToRgb(fillColor);
+    const opacity = Math.round(Math.min(Math.max(this.brushOpacity, 0), 1) * 255);
+    for (const idx of region) {
+      const px = idx % width;
+      const py = Math.floor(idx / width);
+      const lx = px - minX;
+      const ly = py - minY;
+      const out = (ly * bw + lx) * 4;
+      let edgeAlpha = opacity;
+      if (this.wandFeatherPx > 0) {
+        const left = px > 0 ? included[idx - 1] : 0;
+        const right = px < width - 1 ? included[idx + 1] : 0;
+        const top = py > 0 ? included[idx - width] : 0;
+        const bottom = py < height - 1 ? included[idx + width] : 0;
+        if (!left || !right || !top || !bottom) edgeAlpha = Math.round(opacity * 0.7);
+      }
+      imageData.data[out] = rgb.r;
+      imageData.data[out + 1] = rgb.g;
+      imageData.data[out + 2] = rgb.b;
+      imageData.data[out + 3] = edgeAlpha;
+    }
+    this.wandDragCtx.putImageData(imageData, minX, minY);
+    return true;
+  }
+  applyWandFromPointer(force = false) {
+    if (!this.wandCache) return;
+    const now2 = Date.now();
+    if (!force && now2 - this.wandLastAt < this.wandThrottleMs) return;
+    const pos = this.k.stage.getPointerPosition();
+    if (!pos) return;
+    const x = Math.round(pos.x / this.k.resize.scale);
+    const y = Math.round(pos.y / this.k.resize.scale);
+    if (this.applyWandAt(x, y)) this.wandCapturePending = true;
+    this.wandLastAt = now2;
+  }
+  commitWandDrag() {
+    if (!this.wandCapturePending || !this.wandDragCanvas) return;
+    const snapshot = document.createElement("canvas");
+    snapshot.width = this.wandDragCanvas.width;
+    snapshot.height = this.wandDragCanvas.height;
+    const ctx = snapshot.getContext("2d");
+    if (ctx) ctx.drawImage(this.wandDragCanvas, 0, 0);
+    const image = new lib_default.Image({
+      image: snapshot,
+      x: 0,
+      y: 0,
+      draggable: false,
+      opacity: 1,
+      globalCompositeOperation: this.brushMode
+    });
+    image.name(`wand-fill-${Date.now()}`);
+    image.on("click", () => this.k.selectNode(image));
+    this.k.group.add(image);
+    this.k.layer.batchDraw();
+    this.k.history.capture("Wand fill");
+  }
+  startWand() {
+    this.k.stopActions();
+    this.k.stage.off(".wand");
+    this.k.stage.on("mousedown.wand touchstart.wand", () => {
+      if (this.k.imageMode !== "wand") {
+        this.isWanding = false;
+        return;
+      }
+      this.isWanding = true;
+      this.wandCapturePending = false;
+      this.wandLastAt = 0;
+      this.buildWandCache();
+      this.ensureWandDragCanvas();
+      this.applyWandFromPointer(true);
+    });
+    this.k.stage.on("mousemove.wand touchmove.wand", (e) => {
+      if (this.k.imageMode !== "wand" || !this.isWanding) return;
+      e.evt.preventDefault();
+      this.applyWandFromPointer(false);
+    });
+    this.k.stage.on("mouseup.wand touchend.wand", () => {
+      if (!this.isWanding) return;
+      this.isWanding = false;
+      this.commitWandDrag();
+      this.wandCache = null;
+      this.wandDragCanvas = null;
+      this.wandDragCtx = null;
+    });
+  }
   stopPaint() {
     this.isPainting = false;
+    this.isWanding = false;
+    this.k.stage.off(".paint");
+    this.k.stage.off(".wand");
+    this.k.stage.off(".text");
+    this.wandCache = null;
+    this.wandDragCanvas = null;
+    this.wandDragCtx = null;
     this.k.layer.batchDraw();
   }
   startText() {
     this.k.stopActions();
+    this.k.stage.off(".text");
     let isText = true;
     let pos0;
     let pos1;
-    this.k.stage.on("mousedown touchstart", () => {
+    this.k.stage.on("mousedown.text touchstart.text", () => {
       if (!isText) return;
       pos0 = this.k.stage.getPointerPosition();
       pos1 = null;
     });
-    this.k.stage.on("mouseup touchend", () => {
+    this.k.stage.on("mouseup.text touchend.text", () => {
       if (!isText) return;
       const textVal = this.k.paint.textValue + " ";
       if (!textVal || textVal.trim() === "") return;
@@ -12590,6 +12870,7 @@ var Paint = class {
           this.k.helpers.showMessage(`Text: "${textVal}" size=${fontSize}`);
           this.k.group.add(text);
           text.on("click", () => this.k.selectNode(text));
+          this.k.history.capture("Add text");
           break;
         } else {
           text.destroy();
@@ -12598,6 +12879,7 @@ var Paint = class {
       }
       this.k.layer.batchDraw();
       isText = false;
+      this.k.stage.off(".text");
     });
   }
 };
@@ -12765,6 +13047,7 @@ var Outpaint = class {
     }
     this.k.layer.batchDraw();
     this.outpaintActive = true;
+    this.k.history.capture("Outpaint apply");
   }
 };
 
@@ -12820,6 +13103,7 @@ var Filter = class {
         image.threshold(this.filterValue / 100);
       }
       image.draw();
+      this.k.history.capture(`Filter ${this.filterName}`);
     }
   }
 };
@@ -12862,6 +13146,7 @@ var Pan = class {
 var Shapes = class _Shapes {
   k;
   overlayEl = null;
+  resolutionEl = null;
   panelEl = null;
   titleEl = null;
   listEl = null;
@@ -12883,6 +13168,16 @@ var Shapes = class _Shapes {
     if (this.overlayEl && this.panelEl && this.titleEl && this.listEl) return;
     this.overlayEl = document.createElement("div");
     this.overlayEl.className = "kanvas-overlay";
+    this.resolutionEl = document.createElement("div");
+    this.resolutionEl.className = "kanvas-resolution";
+    this.resolutionEl.innerHTML = `
+      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\u{F0A68}</span>
+      <label for="${this.k.containerId}-image-width"></label>
+      <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
+      <label for="${this.k.containerId}-image-height"></label>
+      <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
+    `;
+    this.overlayEl.appendChild(this.resolutionEl);
     this.panelEl = document.createElement("div");
     this.panelEl.className = "kanvas-shapes";
     this.overlayEl.appendChild(this.panelEl);
@@ -13111,7 +13406,9 @@ var Stages = class _Stages {
     this.listEl.className = "kanvas-stages-list";
     this.panelEl.appendChild(this.listEl);
     this.panelEl.classList.toggle("collapsed", this.collapsed);
-    parentEl.prepend(this.panelEl);
+    const shapesPanel = parentEl.querySelector(".kanvas-shapes");
+    if (shapesPanel) parentEl.insertBefore(this.panelEl, shapesPanel);
+    else parentEl.appendChild(this.panelEl);
     this.renderOverlay();
   }
   renderOverlay() {
@@ -13251,6 +13548,7 @@ var Stages = class _Stages {
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
+    this.k.history.capture("Create stage");
     return id;
   }
   switchStage(id) {
@@ -13300,6 +13598,7 @@ var Stages = class _Stages {
       this.k.shapes?.refresh();
     }
     this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
+    this.k.history.capture("Delete stage");
     return true;
   }
   getStageCount() {
@@ -13318,6 +13617,161 @@ var Stages = class _Stages {
     active.height = height;
     this.k.imageLayer.size({ width, height });
     this.k.maskLayer.size({ width, height });
+  }
+};
+
+// src/History.ts
+var History = class _History {
+  k;
+  past = [];
+  future = [];
+  current = null;
+  replaying = false;
+  maxEntries = 100;
+  constructor(k) {
+    this.k = k;
+  }
+  init() {
+    this.current = this.snapshotWorkspace();
+    this.updateToolbar();
+  }
+  canUndo() {
+    return this.past.length > 0;
+  }
+  canRedo() {
+    return this.future.length > 0;
+  }
+  updateToolbar() {
+    this.k.toolbar?.updateHistoryButtons?.(this.canUndo(), this.canRedo());
+  }
+  snapshotWorkspace() {
+    const stages2 = this.k.stages.list.map((stage) => ({
+      id: stage.id,
+      label: stage.label,
+      width: stage.width,
+      height: stage.height,
+      imageJSON: stage.imageGroup.toJSON(),
+      imageSources: this.serializeImageSources(stage.imageGroup),
+      maskJSON: stage.maskGroup.toJSON(),
+      maskSources: this.serializeImageSources(stage.maskGroup)
+    }));
+    return {
+      stageCounter: this.k.stages.stageCounter,
+      activeStageId: this.k.stages.activeStageId,
+      selectedLayer: this.k.selectedLayer,
+      stages: stages2
+    };
+  }
+  capture(_label = "Edit") {
+    if (this.replaying) return;
+    const next = this.snapshotWorkspace();
+    if (!this.current) {
+      this.current = next;
+      this.updateToolbar();
+      return;
+    }
+    this.past.push(this.current);
+    if (this.past.length > this.maxEntries) this.past.shift();
+    this.current = next;
+    this.future = [];
+    this.updateToolbar();
+  }
+  undo() {
+    if (!this.canUndo() || !this.current) return;
+    const previous = this.past.pop();
+    this.future.push(this.current);
+    this.current = previous;
+    this.restoreWorkspace(previous);
+    this.k.helpers.showMessage("Undo");
+    this.updateToolbar();
+  }
+  redo() {
+    if (!this.canRedo() || !this.current) return;
+    const next = this.future.pop();
+    this.past.push(this.current);
+    this.current = next;
+    this.restoreWorkspace(next);
+    this.k.helpers.showMessage("Redo");
+    this.updateToolbar();
+  }
+  static createGroupFromJSON(json) {
+    const node = lib_default.Node.create(json);
+    if (node instanceof lib_default.Group) return node;
+    const group = new lib_default.Group();
+    if (node instanceof lib_default.Shape) group.add(node);
+    return group;
+  }
+  serializeImageSources(group) {
+    const images = group.find("Image");
+    return images.map((image) => {
+      try {
+        const canvas = image.toCanvas({ imageSmoothingEnabled: false });
+        return canvas.toDataURL("image/png");
+      } catch {
+        return "";
+      }
+    });
+  }
+  restoreImageSources(group, sources) {
+    if (!sources || sources.length === 0) return;
+    const images = group.find("Image");
+    images.forEach((node, index) => {
+      const src = sources[index];
+      if (!src) return;
+      const img = new Image();
+      img.onload = () => {
+        node.image(img);
+        if (node.filters() && node.filters().length > 0) node.cache();
+        this.k.stage.batchDraw();
+        this.k.stages.renderOverlay();
+      };
+      img.src = src;
+    });
+  }
+  restoreWorkspace(snapshot) {
+    this.replaying = true;
+    try {
+      this.k.stopActions();
+      this.k.stages.disconnectThumbnailListeners();
+      this.k.stages.list.forEach((stage) => {
+        stage.imageGroup.destroy();
+        stage.maskGroup.destroy();
+      });
+      this.k.stages.list = [];
+      const restored = snapshot.stages.map((stageSnap) => {
+        const imageGroup = _History.createGroupFromJSON(stageSnap.imageJSON);
+        const maskGroup = _History.createGroupFromJSON(stageSnap.maskJSON);
+        imageGroup.visible(false);
+        maskGroup.visible(false);
+        this.k.imageLayer.add(imageGroup);
+        this.k.maskLayer.add(maskGroup);
+        this.restoreImageSources(imageGroup, stageSnap.imageSources || []);
+        this.restoreImageSources(maskGroup, stageSnap.maskSources || []);
+        return {
+          id: stageSnap.id,
+          label: stageSnap.label,
+          imageGroup,
+          maskGroup,
+          width: stageSnap.width,
+          height: stageSnap.height
+        };
+      });
+      this.k.stages.list = restored;
+      this.k.stages.stageCounter = snapshot.stageCounter;
+      const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || "";
+      if (targetStageId) this.k.stages.switchStage(targetStageId);
+      this.k.selectedLayer = snapshot.selectedLayer;
+      if (this.k.selectedLayer === "mask") this.k.toolbar.btnSelectMask?.click();
+      else this.k.toolbar.btnSelectImage?.click();
+      this.k.layer.find("Transformer").forEach((t) => t.destroy());
+      this.k.selected = null;
+      this.k.stage.batchDraw();
+      this.k.shapes.refresh();
+      this.k.stages.renderOverlay();
+      this.k.notifyImage();
+    } finally {
+      this.replaying = false;
+    }
   }
 };
 
@@ -13359,6 +13813,7 @@ var Kanvas = class {
   shapes;
   stages;
   footer;
+  history;
   // callbacks
   onchange;
   destroy() {
@@ -13409,6 +13864,7 @@ var Kanvas = class {
     this.wrapper.appendChild(footerEl);
     this.container = canvasEl;
     this.stages = new Stages(this);
+    this.history = new History(this);
     const stageWidth = opts.width ?? 1024;
     const stageHeight = opts.height ?? 256;
     this.initialize(stageWidth, stageHeight);
@@ -13429,9 +13885,10 @@ var Kanvas = class {
     this.initial = false;
     this.helpers.bindEvents();
     this.helpers.bindStage();
+    this.shapes.drawShapes();
     this.toolbar.bindControls();
     this.pan.bindPan();
-    this.shapes.drawShapes();
+    this.history.init();
     this.wrapper.focus();
     this.wrapper.addEventListener("paste", (evt) => this.upload.pasteImage(evt));
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
@@ -13484,6 +13941,7 @@ var Kanvas = class {
     this.layer.draw();
     this.helpers.showMessage(`Node removed: ${nodeType}`);
     this.shapes.refresh();
+    this.history.capture(`Remove ${nodeType}`);
   }
   stopActions() {
     this.resize.stopClip();
@@ -13504,6 +13962,7 @@ var Kanvas = class {
       this.imageGroup.add(img);
       this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
       this.resize.resizeStageToFit(img, true);
+      this.history.capture("Add image");
     };
     const onError = () => {
       this.helpers.showMessage("Error loading image");
