@@ -92,11 +92,12 @@ export default class Resize {
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
       const primary = document.querySelector('.konvajs-content canvas:first-of-type') as HTMLCanvasElement;
       if (primary) primary.style.background = 'black';
-      this.k.imageLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
-      this.k.maskLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
+      this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
+      this.k.stages.syncActiveLayerRefs();
       this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
       this.updateSizeInputs();
       this.fitStage();
+      this.k.stages.renderOverlay();
       this.k.notifyImage();
     }
     // limit max size
@@ -105,8 +106,12 @@ export default class Resize {
       const x = Math.round(this.k.stage.width() * rescale);
       const y = Math.round(this.k.stage.height() * rescale);
       this.k.stage.size({ width: x, height: y });
+      this.k.stages.resizeActiveStageLayers(x, y);
+      this.k.toolbar.el.style.maxWidth = `${x}px`;
       this.k.helpers.showMessage(`Stage: width=${width} height=${height} max=${this.k.settings.settings.maxSize}`);
       this.updateSizeInputs();
+      this.fitStage();
+      this.k.stages.renderOverlay();
     }
   }
 
@@ -118,16 +123,18 @@ export default class Resize {
   async resizeStage(width: number, height: number) {
     this.k.stage.width(width);
     this.k.stage.height(height);
-    this.k.imageLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
-    this.k.maskLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
+    this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
+    this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
+    this.updateSizeInputs();
     this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
+    this.k.stages.renderOverlay();
     this.k.resize.fitStage();
   }
 
   startResize() {
     this.k.stopActions();
-    const images = this.k.stage.find('Image');
+    const images = this.k.group.getChildren().filter((node): node is Konva.Image => node instanceof Konva.Image);
     images.forEach((image) => {
       image.draggable(true);
       const transformer = new Konva.Transformer({
@@ -141,13 +148,13 @@ export default class Resize {
         anchorCornerRadius: 2,
       });
       this.k.layer.add(transformer);
-      image.on('transform', () => this.resizeStageToFit(image as Konva.Image));
-      image.on('dragmove', () => this.resizeStageToFit(image as Konva.Image));
+      image.on('transform', () => this.resizeStageToFit(image));
+      image.on('dragmove', () => this.resizeStageToFit(image));
     });
   }
 
   stopResize() {
-    const images = this.k.stage.find('Image');
+    const images = this.k.group.getChildren().filter((node): node is Konva.Image => node instanceof Konva.Image);
     images.forEach((image) => image.draggable(false));
     this.k.layer.find('Transformer').forEach((t) => t.destroy());
     this.k.layer.batchDraw();

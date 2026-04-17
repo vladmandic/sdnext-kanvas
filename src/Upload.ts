@@ -30,6 +30,7 @@ export default class Upload {
       }
       if (!blob) continue;
       const url = URL.createObjectURL(blob);
+      const fallbackName = blob instanceof File ? blob.name : `pasted-${Date.now()}.png`;
       const dropImage = new Image();
       dropImage.onload = () => {
         if (!this.k.stage) return;
@@ -40,9 +41,10 @@ export default class Upload {
           draggable: false,
           opacity: this.k.opacity,
         });
-        image.name(blob.name);
+        image.name(fallbackName);
+        if (this.k.selectedLayer === 'image') this.k.stages.setStageLabelFromFileName(fallbackName);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${blob.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
           this.k.stage.size({ width: 0, height: 0 });
@@ -80,8 +82,7 @@ export default class Upload {
       if (!file.type.startsWith('image/')) continue;
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
-      this.k.layer = this.k.selectedLayer === 'image' ? this.k.imageLayer : this.k.maskLayer;
-      this.k.group = this.k.selectedLayer === 'image' ? this.k.imageGroup : this.k.maskGroup;
+      this.k.stages.syncActiveLayerRefs();
       dropImage.onload = () => {
         if (!this.k.stage) return;
         const image = new Konva.Image({
@@ -92,6 +93,7 @@ export default class Upload {
           opacity: this.k.opacity,
         });
         image.name(file.name);
+        if (this.k.selectedLayer === 'image') this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = 'contents';
         this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);

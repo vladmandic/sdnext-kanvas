@@ -8,6 +8,9 @@ import Paint from './Paint';
 import Outpaint from './Outpaint';
 import Filter from './Filters';
 import Pan from './Pan';
+import Shapes from './Shapes';
+import Footer from './Footer';
+import Stages from './Stages';
 
 export default class Kanvas {
   initial = true;
@@ -41,24 +44,12 @@ export default class Kanvas {
   outpaint: Outpaint;
   filter: Filter;
   pan: Pan;
+  shapes: Shapes;
+  stages: Stages;
+  footer: Footer;
 
   // callbacks
   onchange: () => void;
-
-  initImage() {
-    this.imageLayer = new Konva.Layer();
-    this.imageGroup = new Konva.Group();
-    this.imageLayer.add(this.imageGroup);
-    return this.imageLayer;
-  }
-
-  initMask() {
-    this.maskLayer = new Konva.Layer();
-    this.maskGroup = new Konva.Group();
-    this.maskLayer.add(this.maskGroup);
-    this.maskLayer.opacity(0.5);
-    return this.maskLayer;
-  }
 
   destroy(): void {
     if (this.stage) {
@@ -68,19 +59,19 @@ export default class Kanvas {
 
   initialize(defaultWidth = 1024, defaultHeight = 256) {
     this.destroy();
+    this.stages.reset();
     this.stage = new Konva.Stage({
       container: `${this.containerId}-kanvas`,
       width: defaultWidth,
       height: defaultHeight,
     });
-    this.stage.add(this.initImage());
-    this.stage.add(this.initMask());
-    this.layer = this.selectedLayer === 'image' ? this.imageLayer : this.maskLayer;
-    this.group = this.selectedLayer === 'image' ? this.imageGroup : this.maskGroup;
+    this.stages.initializeLayers(defaultWidth, defaultHeight);
+    this.stages.createStage('Stage 1');
     if (this.controls) this.controls.style.display = 'none';
     if (this.helpers) this.helpers.bindStage();
     if (this.pan) this.pan.bindPan();
     if (this.outpaint) this.outpaint.outpaintActive = false;
+    if (this.shapes) this.shapes.drawShapes();
   }
 
   constructor(containerId: string, opts: { width?: number; height?: number } = {}) {
@@ -98,12 +89,17 @@ export default class Kanvas {
     const canvasEl = document.createElement('div');
     canvasEl.className = 'kanvas';
     canvasEl.id = `${this.containerId}-kanvas`;
+    const footerEl = document.createElement('div');
+    footerEl.id = `${this.containerId}-footer`;
     // clear wrapper and append
     this.wrapper.textContent = '';
     this.wrapper.tabIndex = -1;
     this.wrapper.appendChild(toolbarEl);
     this.wrapper.appendChild(canvasEl);
+    this.wrapper.appendChild(footerEl);
     this.container = canvasEl;
+
+    this.stages = new Stages(this);
 
     // store initial width/height from opts or defaults
     const stageWidth = opts.width ?? 1024;
@@ -120,6 +116,8 @@ export default class Kanvas {
     this.outpaint = new Outpaint(this);
     this.filter = new Filter(this);
     this.pan = new Pan(this);
+    this.shapes = new Shapes(this);
+    this.footer = new Footer(this);
     this.log = this.helpers.kanvasLog; // expose log function
 
     // log first init
@@ -132,6 +130,7 @@ export default class Kanvas {
     this.helpers.bindStage();
     this.toolbar.bindControls();
     this.pan.bindPan();
+    this.shapes.drawShapes();
 
     // register clipboard paste
     this.wrapper.focus();
@@ -143,15 +142,42 @@ export default class Kanvas {
     this.resize.fitStage();
   }
 
+  async selectRegister() {
+    for (const shape of this.group.getChildren()) {
+      if (shape instanceof Konva.Shape) shape.on('click', (evt) => this.selectNode(evt.target));
+    }
+  }
+
   async selectNode(node: Konva.Node) {
+    if (!node) return;
+    const valid = node?.parent === this.group || node?.parent === this.layer;
+    if (!valid) return;
     this.pan.moving = false;
     this.selected = node;
-    if (!this.selected) return;
     const nodeType = this.selected.getClassName();
-    if (nodeType === 'Image') this.helpers.showMessage(`Selected: ${nodeType} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
-    else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType} points=${(this.selected as Konva.Line).points().length / 2}`);
-    else if (nodeType === 'Text') this.helpers.showMessage(`Selected: ${nodeType} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    if (nodeType === 'Image') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${(this.selected as Konva.Line).points().length / 2}`);
+    else if (nodeType === 'Text') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
+
+    this.layer.find('Transformer').forEach((t) => t.destroy());
+    if (nodeType !== 'Image') {
+      node.draggable(true);
+      const tr = new Konva.Transformer({
+        nodes: [this.selected],
+        rotateEnabled: nodeType !== 'Line', // disable rotation for lines
+        borderStroke: '#298',
+        borderStrokeWidth: 2,
+        anchorFill: '#298',
+        anchorStroke: '#298',
+        anchorStrokeWidth: 2,
+        anchorSize: 10,
+        anchorCornerRadius: 2,
+      });
+      this.layer.add(tr);
+      this.layer.batchDraw();
+    }
+    this.shapes.refresh();
   }
 
   async removeNode(node: Konva.Node) {
@@ -163,17 +189,14 @@ export default class Kanvas {
     }
     this.layer.draw();
     this.helpers.showMessage(`Node removed: ${nodeType}`);
+    this.shapes.refresh();
   }
 
   stopActions() {
+    // this.imageMode = 'none';
     this.resize.stopClip();
     this.resize.stopResize();
     this.paint.stopPaint();
-    /*
-    const shapes = this.k.stage.find('Shape');
-    for (const shape of shapes) {
-    }
-    */
   }
 
   notifyImage() {
@@ -254,6 +277,7 @@ export default class Kanvas {
     this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     return result;
   }
+
 }
 
 // expose Kanvas globally

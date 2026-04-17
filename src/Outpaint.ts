@@ -51,7 +51,7 @@ export default class Outpaint {
     });
     fillRect.name('mask-outpaint');
     this.k.maskGroup.add(fillRect);
-    const images = this.k.stage.find('Image');
+    const images = this.k.imageGroup.getChildren((node) => node instanceof Konva.Image);
     for (const image of images) {
       if (image.name() === 'fill') continue;
       image.cache();

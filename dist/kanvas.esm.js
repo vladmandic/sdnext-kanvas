@@ -11763,6 +11763,19 @@ var Helpers = class {
 var Toolbar = class {
   k;
   el;
+  btnSelectImage = null;
+  btnSelectMask = null;
+  btnUpload = null;
+  btnPaste = null;
+  btnRemove = null;
+  btnReset = null;
+  btnRefresh = null;
+  btnResize = null;
+  btnCrop = null;
+  btnPaint = null;
+  btnFilters = null;
+  btnText = null;
+  btnOutpaint = null;
   constructor(k) {
     this.k = k;
     this.el = document.getElementById(`${this.k.containerId}-toolbar`);
@@ -11775,7 +11788,7 @@ var Toolbar = class {
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\u{F087C}</span>
       <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\u{F1A00}</span>
-      <span class="kanvas-button" title="Remove currently selected image" id="${this.k.containerId}-button-remove">\u{F1418}</span>
+      <span class="kanvas-button" title="Remove currently selected object" id="${this.k.containerId}-button-remove">\u{F1418}</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uF1B8</span>
 
       <span id="${this.k.containerId}-active-controls" style="display: none;">
@@ -11862,8 +11875,6 @@ var Toolbar = class {
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\uEB52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\u{F02FD}</span>
-
-      <span class="kanvas-text" id="${this.k.containerId}-message"></span>
     `;
   }
   async resetButtons() {
@@ -11902,55 +11913,70 @@ var Toolbar = class {
       this.k.helpers.showMessage(`Toolbar: scale=${sizePx}`);
       document.documentElement.style.setProperty("--kanvas-size", sizePx);
     };
-    document.getElementById(`${this.k.containerId}-button-image`)?.addEventListener("click", async (e) => {
+    this.btnSelectImage = document.getElementById(`${this.k.containerId}-button-image`);
+    this.btnSelectMask = document.getElementById(`${this.k.containerId}-button-mask`);
+    this.btnSelectImage?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.selectedLayer = "image";
-      document.getElementById(`${this.k.containerId}-button-image`)?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-button-mask`)?.classList.remove("active");
+      this.k.layer = this.k.imageLayer;
+      this.k.group = this.k.imageGroup;
+      this.btnSelectImage?.classList.add("active");
+      this.btnSelectMask?.classList.remove("active");
       this.k.helpers.showMessage("Active: image layer");
+      this.k.shapes.refresh();
     });
-    document.getElementById(`${this.k.containerId}-button-mask`)?.addEventListener("click", async (e) => {
+    this.btnSelectMask?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.selectedLayer = "mask";
-      document.getElementById(`${this.k.containerId}-button-image`)?.classList.remove("active");
-      document.getElementById(`${this.k.containerId}-button-mask`)?.classList.add("active");
+      this.k.layer = this.k.maskLayer;
+      this.k.group = this.k.maskGroup;
+      this.btnSelectImage?.classList.remove("active");
+      this.btnSelectMask?.classList.add("active");
       this.k.helpers.showMessage("Active: mask layer");
+      this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener("input", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.upload.updateOpacity(parseFloat(e.target.value));
     });
-    document.getElementById(`${this.k.containerId}-button-upload`)?.addEventListener("click", async (e) => {
+    this.btnPaste = document.getElementById(`${this.k.containerId}-button-paste`);
+    this.btnUpload = document.getElementById(`${this.k.containerId}-button-upload`);
+    this.btnRemove = document.getElementById(`${this.k.containerId}-button-remove`);
+    this.btnReset = document.getElementById(`${this.k.containerId}-button-reset`);
+    this.btnRefresh = document.getElementById(`${this.k.containerId}-button-refresh`);
+    this.btnUpload?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "upload";
       this.resetButtons();
       this.k.upload.uploadFile(false);
     });
-    document.getElementById(`${this.k.containerId}-button-paste`)?.addEventListener("click", async (e) => {
+    this.btnPaste?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const status = await document.execCommand("paste");
       if (!status) this.k.upload.pasteImage();
     });
-    document.getElementById(`${this.k.containerId}-button-remove`)?.addEventListener("click", async (e) => {
+    this.btnRemove?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.removeNode(this.k.selected);
     });
-    document.getElementById(`${this.k.containerId}-button-reset`)?.addEventListener("click", async (e) => {
+    this.btnReset?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.initialize();
+      this.btnSelectImage?.click();
     });
-    document.getElementById(`${this.k.containerId}-button-refresh`)?.addEventListener("click", async (e) => {
+    this.btnRefresh?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.stopActions();
       this.resetButtons();
+      this.k.imageMode = "none";
     });
     const resizeFromInputs = async (evt) => {
       evt.preventDefault();
@@ -11995,42 +12021,46 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.settings.showInfo();
     });
-    document.getElementById(`${this.k.containerId}-button-resize`)?.addEventListener("click", async (e) => {
+    this.btnResize = document.getElementById(`${this.k.containerId}-button-resize`);
+    this.btnCrop = document.getElementById(`${this.k.containerId}-button-crop`);
+    this.btnResize?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "resize";
       this.k.helpers.showMessage("Image mode=resize");
       this.k.resize.startResize();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-resize`)?.classList.add("active");
+      this.btnResize?.classList.add("active");
     });
-    document.getElementById(`${this.k.containerId}-button-crop`)?.addEventListener("click", async (e) => {
+    this.btnCrop?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "crop";
       this.k.helpers.showMessage("Image mode=crop");
       this.k.resize.startClip();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-crop`)?.classList.add("active");
+      this.btnCrop?.classList.add("active");
     });
-    document.getElementById(`${this.k.containerId}-button-paint`)?.addEventListener("click", async (e) => {
+    this.btnPaint = document.getElementById(`${this.k.containerId}-button-paint`);
+    this.btnPaint?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "paint";
       this.k.helpers.showMessage("Image mode=paint");
       this.k.paint.startPaint();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-paint`)?.classList.add("active");
+      this.btnPaint?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
     });
-    document.getElementById(`${this.k.containerId}-button-text`)?.addEventListener("click", async (e) => {
+    this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
+    this.btnText?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "text";
       this.k.helpers.showMessage("Image mode=text");
       this.k.paint.startText();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-text`)?.classList.add("active");
+      this.btnText?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
       document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add("active");
     });
@@ -12064,19 +12094,19 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.paint.textValue = e.target.value;
     });
-    document.getElementById(`${this.k.containerId}-button-outpaint`)?.addEventListener("click", async (e) => {
+    this.btnOutpaint = document.getElementById(`${this.k.containerId}-button-outpaint`);
+    this.btnOutpaint?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "outpaint";
-      const outpaintButton = document.getElementById(`${this.k.containerId}-button-outpaint`);
-      if (outpaintButton?.classList.contains("active")) {
-        document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.remove("active");
+      if (this.btnOutpaint?.classList.contains("active")) {
+        this.btnOutpaint?.classList.remove("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
         this.k.outpaint.doOutpaint();
       } else {
         this.k.stopActions();
         this.resetButtons();
-        document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.add("active");
+        this.btnOutpaint?.classList.add("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add("active");
       }
     });
@@ -12092,15 +12122,16 @@ var Toolbar = class {
       this.k.outpaint.outpaintBlur = parseFloat(e.target.value);
       if (this.k.outpaint.outpaintBlur < 0 || this.k.outpaint.outpaintBlur > 1) this.k.outpaint.outpaintBlur = 0.1;
     });
-    document.getElementById(`${this.k.containerId}-button-filters`)?.addEventListener("click", async (e) => {
+    this.btnFilters = document.getElementById(`${this.k.containerId}-button-filters`);
+    this.btnFilters?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "filters";
       this.k.helpers.showMessage("Image mode=filters");
       this.k.stopActions();
-      if (document.getElementById(`${this.k.containerId}-button-filters`)?.classList.contains("active")) this.k.filter.applyFilter();
+      if (this.btnFilters?.classList.contains("active")) this.k.filter.applyFilter();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-filters`)?.classList.add("active");
+      this.btnFilters?.classList.add("active");
       document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add("active");
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener("input", async (e) => {
@@ -12145,6 +12176,7 @@ var Upload = class {
       }
       if (!blob) continue;
       const url = URL.createObjectURL(blob);
+      const fallbackName = blob instanceof File ? blob.name : `pasted-${Date.now()}.png`;
       const dropImage = new Image();
       dropImage.onload = () => {
         if (!this.k.stage) return;
@@ -12155,9 +12187,10 @@ var Upload = class {
           draggable: false,
           opacity: this.k.opacity
         });
-        image.name(blob.name);
+        image.name(fallbackName);
+        if (this.k.selectedLayer === "image") this.k.stages.setStageLabelFromFileName(fallbackName);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${blob.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
           this.k.stage.size({ width: 0, height: 0 });
@@ -12194,8 +12227,7 @@ var Upload = class {
       if (!file.type.startsWith("image/")) continue;
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
-      this.k.layer = this.k.selectedLayer === "image" ? this.k.imageLayer : this.k.maskLayer;
-      this.k.group = this.k.selectedLayer === "image" ? this.k.imageGroup : this.k.maskGroup;
+      this.k.stages.syncActiveLayerRefs();
       dropImage.onload = () => {
         if (!this.k.stage) return;
         const image = new lib_default.Image({
@@ -12206,6 +12238,7 @@ var Upload = class {
           opacity: this.k.opacity
         });
         image.name(file.name);
+        if (this.k.selectedLayer === "image") this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = "contents";
         this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
@@ -12333,11 +12366,12 @@ var Resize = class {
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
       const primary = document.querySelector(".konvajs-content canvas:first-of-type");
       if (primary) primary.style.background = "black";
-      this.k.imageLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
-      this.k.maskLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
+      this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
+      this.k.stages.syncActiveLayerRefs();
       this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
       this.updateSizeInputs();
       this.fitStage();
+      this.k.stages.renderOverlay();
       this.k.notifyImage();
     }
     if (this.k.stage.width() > this.k.settings.settings.maxSize || this.k.stage.height() > this.k.settings.settings.maxSize) {
@@ -12345,8 +12379,12 @@ var Resize = class {
       const x = Math.round(this.k.stage.width() * rescale);
       const y = Math.round(this.k.stage.height() * rescale);
       this.k.stage.size({ width: x, height: y });
+      this.k.stages.resizeActiveStageLayers(x, y);
+      this.k.toolbar.el.style.maxWidth = `${x}px`;
       this.k.helpers.showMessage(`Stage: width=${width} height=${height} max=${this.k.settings.settings.maxSize}`);
       this.updateSizeInputs();
+      this.fitStage();
+      this.k.stages.renderOverlay();
     }
   }
   async resizeStageToFit(el, force = false) {
@@ -12356,15 +12394,17 @@ var Resize = class {
   async resizeStage(width, height) {
     this.k.stage.width(width);
     this.k.stage.height(height);
-    this.k.imageLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
-    this.k.maskLayer.size({ width: this.k.stage.width(), height: this.k.stage.height() });
+    this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
+    this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
+    this.updateSizeInputs();
     this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
+    this.k.stages.renderOverlay();
     this.k.resize.fitStage();
   }
   startResize() {
     this.k.stopActions();
-    const images = this.k.stage.find("Image");
+    const images = this.k.group.getChildren().filter((node) => node instanceof lib_default.Image);
     images.forEach((image) => {
       image.draggable(true);
       const transformer = new lib_default.Transformer({
@@ -12383,7 +12423,7 @@ var Resize = class {
     });
   }
   stopResize() {
-    const images = this.k.stage.find("Image");
+    const images = this.k.group.getChildren().filter((node) => node instanceof lib_default.Image);
     images.forEach((image) => image.draggable(false));
     this.k.layer.find("Transformer").forEach((t) => t.destroy());
     this.k.layer.batchDraw();
@@ -12450,6 +12490,7 @@ var Paint = class {
   textFont = "Calibri";
   textValue = "Hello World";
   isPainting = false;
+  lines = [];
   constructor(k) {
     this.k = k;
     this.brushSize = this.k.settings.settings.brushSize;
@@ -12457,21 +12498,19 @@ var Paint = class {
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
-    let lastLine;
     this.k.stage.on("mousedown touchstart", () => {
       if (this.k.imageMode !== "paint") {
         this.isPainting = false;
         return;
       }
       this.isPainting = true;
-      this.k.layer = this.k.selectedLayer === "image" ? this.k.imageLayer : this.k.maskLayer;
-      this.k.group = this.k.selectedLayer === "image" ? this.k.imageGroup : this.k.maskGroup;
+      this.k.stages.syncActiveLayerRefs();
       const pos = this.k.stage.getPointerPosition();
       const brushColor = this.k.selectedLayer === "image" ? this.k.paint.brushColor : hexToGrayscale(this.k.paint.brushColor);
       if (!pos) return;
       const x = pos.x / this.k.resize.scale;
       const y = pos.y / this.k.resize.scale;
-      lastLine = new lib_default.Line({
+      const newLine = new lib_default.Line({
         stroke: brushColor,
         strokeWidth: 2 * this.k.paint.brushSize,
         opacity: this.k.paint.brushOpacity,
@@ -12482,13 +12521,13 @@ var Paint = class {
         points: [x, y, x, y]
         // add point twice, so we have some drawings even on a simple click
       });
-      lastLine.on("click", () => this.k.selectNode(lastLine));
-      this.k.group.add(lastLine);
+      newLine.on("click", (evt) => this.k.selectNode(evt.target));
+      this.lines.push(newLine);
+      this.k.group.add(newLine);
     });
     this.k.stage.on("mouseup touchend", () => {
       if (this.isPainting) {
         this.isPainting = false;
-        lastLine = null;
       }
     });
     this.k.stage.on("mousemove touchmove", (e) => {
@@ -12496,6 +12535,7 @@ var Paint = class {
       if (!this.isPainting) return;
       e.evt.preventDefault();
       const pos = this.k.stage.getPointerPosition();
+      const lastLine = this.lines[this.lines.length - 1];
       if (!pos || !lastLine) return;
       const x = pos.x / this.k.resize.scale;
       const y = pos.y / this.k.resize.scale;
@@ -12701,7 +12741,7 @@ var Outpaint = class {
     });
     fillRect.name("mask-outpaint");
     this.k.maskGroup.add(fillRect);
-    const images = this.k.stage.find("Image");
+    const images = this.k.imageGroup.getChildren((node) => node instanceof lib_default.Image);
     for (const image of images) {
       if (image.name() === "fill") continue;
       image.cache();
@@ -12818,6 +12858,469 @@ var Pan = class {
   }
 };
 
+// src/Shapes.ts
+var Shapes = class _Shapes {
+  k;
+  overlayEl = null;
+  panelEl = null;
+  titleEl = null;
+  listEl = null;
+  boundStage = null;
+  boundImageGroup = null;
+  boundMaskGroup = null;
+  refreshRaf = 0;
+  collapsed = false;
+  constructor(k) {
+    this.k = k;
+  }
+  getActiveLayer() {
+    return this.k.selectedLayer === "image" ? this.k.imageLayer : this.k.maskLayer;
+  }
+  getActiveGroup() {
+    return this.k.selectedLayer === "image" ? this.k.imageGroup : this.k.maskGroup;
+  }
+  ensureOverlay() {
+    if (this.overlayEl && this.panelEl && this.titleEl && this.listEl) return;
+    this.overlayEl = document.createElement("div");
+    this.overlayEl.className = "kanvas-overlay";
+    this.panelEl = document.createElement("div");
+    this.panelEl.className = "kanvas-shapes";
+    this.overlayEl.appendChild(this.panelEl);
+    this.titleEl = document.createElement("div");
+    this.titleEl.className = "kanvas-shapes-titles";
+    this.titleEl.addEventListener("click", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.collapsed = !this.collapsed;
+      this.overlayEl?.classList.toggle("collapsed", this.collapsed);
+    });
+    this.panelEl.appendChild(this.titleEl);
+    this.listEl = document.createElement("div");
+    this.listEl.className = "kanvas-shapes-list";
+    this.panelEl.appendChild(this.listEl);
+    this.k.wrapper.appendChild(this.overlayEl);
+  }
+  disconnectListeners() {
+    if (this.boundStage) this.boundStage.off(".shapes");
+    if (this.boundImageGroup) this.boundImageGroup.off(".shapes");
+    if (this.boundMaskGroup) this.boundMaskGroup.off(".shapes");
+    if (this.refreshRaf) {
+      window.cancelAnimationFrame(this.refreshRaf);
+      this.refreshRaf = 0;
+    }
+    this.boundStage = null;
+    this.boundImageGroup = null;
+    this.boundMaskGroup = null;
+  }
+  scheduleRefresh() {
+    if (this.refreshRaf) return;
+    this.refreshRaf = window.requestAnimationFrame(() => {
+      this.refreshRaf = 0;
+      this.refresh();
+    });
+  }
+  bindListeners() {
+    this.disconnectListeners();
+    this.boundStage = this.k.stage;
+    this.boundImageGroup = this.k.imageGroup;
+    this.boundMaskGroup = this.k.maskGroup;
+    const refresh = () => this.refresh();
+    const schedule = () => this.scheduleRefresh();
+    this.boundStage.on("click.shapes tap.shapes", refresh);
+    this.boundStage.on("dragmove.shapes transform.shapes transformend.shapes dragend.shapes mouseup.shapes touchend.shapes", schedule);
+    this.boundImageGroup.on("add.shapes remove.shapes destroy.shapes", refresh);
+    this.boundMaskGroup.on("add.shapes remove.shapes destroy.shapes", refresh);
+    this.boundImageGroup.on("xChange.shapes yChange.shapes widthChange.shapes heightChange.shapes scaleXChange.shapes scaleYChange.shapes pointsChange.shapes", schedule);
+    this.boundMaskGroup.on("xChange.shapes yChange.shapes widthChange.shapes heightChange.shapes scaleXChange.shapes scaleYChange.shapes pointsChange.shapes", schedule);
+  }
+  getLayerNodes() {
+    const group = this.getActiveGroup();
+    const nodes = group.getChildren((node) => node instanceof lib_default.Shape);
+    return nodes;
+  }
+  static getNodeLabel(node) {
+    const nodeType = node.getClassName();
+    const nodeName = node.name();
+    const width = Math.round(node.width() * node.scaleX());
+    const height = Math.round(node.height() * node.scaleY());
+    const labelName = nodeName ? ` ${nodeName}` : "";
+    return `${nodeType}${labelName} ${width}x${height}`;
+  }
+  renderList() {
+    if (!this.overlayEl || !this.titleEl || !this.listEl) return;
+    this.k.stages.mountOverlay(this.overlayEl);
+    this.k.stages.renderOverlay();
+    const layer = this.getActiveLayer();
+    const nodes = this.getLayerNodes();
+    this.titleEl.textContent = `Layer ${this.k.selectedLayer}: ${nodes.length} shapes`;
+    this.overlayEl.classList.toggle("active", nodes.length > 0);
+    this.overlayEl.classList.toggle("collapsed", this.collapsed);
+    this.listEl.textContent = "";
+    if (nodes.length === 0) {
+      const emptyEl = document.createElement("div");
+      emptyEl.className = "kanvas-shapes-empty";
+      emptyEl.textContent = "No shapes in active layer";
+      this.listEl.appendChild(emptyEl);
+      return;
+    }
+    nodes.forEach((node) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "kanvas-shapes-item";
+      item.textContent = _Shapes.getNodeLabel(node);
+      if (this.k.selected === node) item.classList.add("active");
+      item.addEventListener("click", async (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        const isValid = node.parent === this.getActiveGroup() || node.parent === layer;
+        if (!isValid) return;
+        this.k.imageMode = "none";
+        await this.k.stopActions();
+        await this.k.toolbar.resetButtons();
+        await this.k.selectNode(node);
+        this.refresh();
+      });
+      this.listEl?.appendChild(item);
+    });
+  }
+  refresh() {
+    this.k.stages.syncActiveLayerRefs();
+    this.k.layer = this.getActiveLayer();
+    this.k.group = this.getActiveGroup();
+    this.renderList();
+  }
+  drawShapes() {
+    this.ensureOverlay();
+    this.bindListeners();
+    this.refresh();
+  }
+};
+
+// src/Footer.ts
+var Footer = class {
+  k;
+  el;
+  constructor(k) {
+    this.k = k;
+    this.el = document.getElementById(`${this.k.containerId}-footer`);
+    this.el.classList.add("kanvas-toolbar", "kanvas-footer");
+    this.el.classList.add("active");
+    this.el.innerHTML = `
+      <span class="kanvas-text" id="${this.k.containerId}-message"></span>
+    `;
+  }
+};
+
+// src/Stages.ts
+var Stages = class _Stages {
+  k;
+  list = [];
+  activeStageId = "";
+  stageCounter = 1;
+  maxStages = 10;
+  panelEl = null;
+  titleEl = null;
+  titleLabelEl = null;
+  listEl = null;
+  btnAdd = null;
+  boundImageGroup = null;
+  boundMaskGroup = null;
+  refreshRaf = 0;
+  collapsed = false;
+  constructor(k) {
+    this.k = k;
+  }
+  initializeLayers(width, height) {
+    this.k.imageLayer = new lib_default.Layer();
+    this.k.maskLayer = new lib_default.Layer();
+    this.k.maskLayer.opacity(0.5);
+    this.k.imageLayer.size({ width, height });
+    this.k.maskLayer.size({ width, height });
+    this.k.stage.add(this.k.imageLayer);
+    this.k.stage.add(this.k.maskLayer);
+  }
+  reset() {
+    this.list = [];
+    this.activeStageId = "";
+    this.stageCounter = 1;
+    this.collapsed = false;
+    if (this.panelEl) this.panelEl.remove();
+    this.panelEl = null;
+    this.titleEl = null;
+    this.titleLabelEl = null;
+    this.listEl = null;
+    this.btnAdd = null;
+    this.disconnectThumbnailListeners();
+    if (this.refreshRaf) {
+      window.cancelAnimationFrame(this.refreshRaf);
+      this.refreshRaf = 0;
+    }
+  }
+  disconnectThumbnailListeners() {
+    if (this.boundImageGroup) this.boundImageGroup.off(".stages-thumb");
+    if (this.boundMaskGroup) this.boundMaskGroup.off(".stages-thumb");
+    this.boundImageGroup = null;
+    this.boundMaskGroup = null;
+  }
+  scheduleOverlayRender() {
+    if (this.refreshRaf) return;
+    this.refreshRaf = window.requestAnimationFrame(() => {
+      this.refreshRaf = 0;
+      this.renderOverlay();
+    });
+  }
+  bindThumbnailListeners() {
+    this.disconnectThumbnailListeners();
+    this.boundImageGroup = this.k.imageGroup;
+    this.boundMaskGroup = this.k.maskGroup;
+    const schedule = () => this.scheduleOverlayRender();
+    const refresh = () => this.renderOverlay();
+    this.boundImageGroup.on("add.stages-thumb remove.stages-thumb destroy.stages-thumb", refresh);
+    this.boundMaskGroup.on("add.stages-thumb remove.stages-thumb destroy.stages-thumb", refresh);
+    this.boundImageGroup.on("xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb", schedule);
+    this.boundMaskGroup.on("xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb", schedule);
+  }
+  mountOverlay(parentEl) {
+    if (this.panelEl && this.panelEl.parentElement === parentEl) return;
+    if (this.panelEl) this.panelEl.remove();
+    this.panelEl = document.createElement("div");
+    this.panelEl.className = "kanvas-stages";
+    this.titleEl = document.createElement("div");
+    this.titleEl.className = "kanvas-stages-titles";
+    this.titleEl.addEventListener("click", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.collapsed = !this.collapsed;
+      this.panelEl?.classList.toggle("collapsed", this.collapsed);
+    });
+    this.panelEl.appendChild(this.titleEl);
+    this.titleLabelEl = document.createElement("span");
+    this.titleLabelEl.textContent = "Stages: 1";
+    this.titleEl.appendChild(this.titleLabelEl);
+    this.btnAdd = document.createElement("span");
+    this.btnAdd.className = "kanvas-button kanvas-stage-control";
+    this.btnAdd.title = "Add stage";
+    this.btnAdd.textContent = "+";
+    this.btnAdd.addEventListener("click", (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      this.createStage();
+    });
+    this.titleEl.appendChild(this.btnAdd);
+    this.listEl = document.createElement("div");
+    this.listEl.className = "kanvas-stages-list";
+    this.panelEl.appendChild(this.listEl);
+    this.panelEl.classList.toggle("collapsed", this.collapsed);
+    parentEl.prepend(this.panelEl);
+    this.renderOverlay();
+  }
+  renderOverlay() {
+    if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
+    const stages2 = this.getStageList();
+    const activeIndex = this.list.findIndex((stage) => stage.id === this.activeStageId);
+    this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
+    this.btnAdd.classList.toggle("disabled", !this.canCreateStage());
+    this.listEl.textContent = "";
+    stages2.forEach((stage) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "kanvas-stage-item";
+      if (stage.active) item.classList.add("active");
+      const thumb = document.createElement("span");
+      thumb.className = "kanvas-stage-thumb";
+      if (stage.thumbnail) {
+        const img = document.createElement("img");
+        img.src = stage.thumbnail;
+        img.alt = stage.label;
+        thumb.appendChild(img);
+      } else {
+        thumb.textContent = "Empty";
+      }
+      item.appendChild(thumb);
+      const meta = document.createElement("span");
+      meta.className = "kanvas-stage-meta";
+      const header = document.createElement("span");
+      header.className = "kanvas-stage-header";
+      const label = document.createElement("span");
+      label.className = "kanvas-stage-label";
+      label.textContent = stage.label;
+      header.appendChild(label);
+      if (stage.removable) {
+        const remove = document.createElement("span");
+        remove.className = "kanvas-button kanvas-stage-remove";
+        remove.title = `Delete ${stage.label}`;
+        remove.textContent = "\xD7";
+        remove.addEventListener("click", (evt) => {
+          evt.preventDefault();
+          evt.stopPropagation();
+          this.deleteStage(stage.id);
+        });
+        header.appendChild(remove);
+      }
+      meta.appendChild(header);
+      const resolution = document.createElement("span");
+      resolution.className = "kanvas-stage-resolution";
+      resolution.textContent = `${Math.round(stage.width)}x${Math.round(stage.height)}`;
+      meta.appendChild(resolution);
+      item.appendChild(meta);
+      item.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        if (!stage.active) this.switchStage(stage.id);
+        if (!stage.thumbnail) this.k.upload.uploadFile(false);
+      });
+      this.listEl?.appendChild(item);
+    });
+  }
+  static createStageNodes() {
+    const imageGroup = new lib_default.Group();
+    const maskGroup = new lib_default.Group();
+    return { imageGroup, maskGroup };
+  }
+  getActiveStage() {
+    return this.list.find((stage) => stage.id === this.activeStageId) || null;
+  }
+  getStageList() {
+    return this.list.map((stage, index) => ({
+      id: stage.id,
+      label: stage.label,
+      active: stage.id === this.activeStageId,
+      removable: index > 0,
+      width: stage.width,
+      height: stage.height,
+      thumbnail: this.getStageThumbnail(stage.id)
+    }));
+  }
+  getStageThumbnail(stageId) {
+    const stage = this.list.find((item) => item.id === stageId);
+    if (!stage || !stage.imageGroup.hasChildren()) return null;
+    const width = Math.max(1, Math.round(stage.width));
+    const height = Math.max(1, Math.round(stage.height));
+    const wasVisible = stage.imageGroup.visible();
+    if (!wasVisible) stage.imageGroup.visible(true);
+    const canvas = stage.imageGroup.toCanvas({
+      x: 0,
+      y: 0,
+      width,
+      height,
+      imageSmoothingEnabled: false
+    });
+    if (!wasVisible) stage.imageGroup.visible(false);
+    return canvas.toDataURL("image/png");
+  }
+  syncActiveLayerRefs() {
+    const active = this.getActiveStage();
+    if (!active) return;
+    this.k.imageGroup = active.imageGroup;
+    this.k.maskGroup = active.maskGroup;
+    this.k.layer = this.k.selectedLayer === "image" ? this.k.imageLayer : this.k.maskLayer;
+    this.k.group = this.k.selectedLayer === "image" ? this.k.imageGroup : this.k.maskGroup;
+  }
+  setStageLabelFromFileName(fileName) {
+    const active = this.getActiveStage();
+    if (!active) return;
+    const normalized = fileName.split("/").pop()?.split("\\").pop() || "";
+    const baseName = normalized.replace(/\.[^/.]+$/, "").trim();
+    if (!baseName) return;
+    active.label = baseName;
+    this.renderOverlay();
+    this.k.shapes?.refresh();
+  }
+  createStage(label) {
+    if (this.list.length >= this.maxStages) {
+      this.k.helpers?.showMessage?.(`Maximum stages reached: ${this.maxStages}`);
+      return null;
+    }
+    const id = `stage-${this.stageCounter}`;
+    const stageNum = this.list.length + 1;
+    const { imageGroup, maskGroup } = _Stages.createStageNodes();
+    this.k.imageLayer.add(imageGroup);
+    this.k.maskLayer.add(maskGroup);
+    const stageData = {
+      id,
+      label: label?.trim() || `Stage ${stageNum}`,
+      imageGroup,
+      maskGroup,
+      width: this.k.stage.width(),
+      height: this.k.stage.height()
+    };
+    imageGroup.visible(false);
+    maskGroup.visible(false);
+    this.list.push(stageData);
+    this.stageCounter += 1;
+    this.switchStage(id);
+    this.renderOverlay();
+    this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
+    return id;
+  }
+  switchStage(id) {
+    const next = this.list.find((stage) => stage.id === id);
+    if (!next) return false;
+    this.activeStageId = id;
+    this.list.forEach((stage) => {
+      const visible = stage.id === id;
+      stage.imageGroup.visible(visible);
+      stage.maskGroup.visible(visible);
+    });
+    this.syncActiveLayerRefs();
+    this.bindThumbnailListeners();
+    const nextWidth = Math.max(1, Math.round(next.width));
+    const nextHeight = Math.max(1, Math.round(next.height));
+    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.stage.size({ width: nextWidth, height: nextHeight });
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
+    this.k.resize?.updateSizeInputs?.();
+    this.k.resize?.fitStage?.();
+    this.k.layer.find("Transformer").forEach((t) => t.destroy());
+    this.k.selected = null;
+    this.k.stage.batchDraw();
+    this.k.shapes?.drawShapes();
+    this.renderOverlay();
+    this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
+    return true;
+  }
+  deleteStage(id) {
+    if (this.list.length <= 1) return false;
+    if (this.list[0]?.id === id) {
+      this.k.helpers?.showMessage?.("First stage cannot be deleted");
+      return false;
+    }
+    const index = this.list.findIndex((stage) => stage.id === id);
+    if (index === -1) return false;
+    const [removed] = this.list.splice(index, 1);
+    removed.imageGroup.destroy();
+    removed.maskGroup.destroy();
+    if (this.activeStageId === id) {
+      this.activeStageId = this.list[0].id;
+      this.switchStage(this.activeStageId);
+    } else {
+      this.k.stage.batchDraw();
+      this.renderOverlay();
+      this.k.shapes?.refresh();
+    }
+    this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
+    return true;
+  }
+  getStageCount() {
+    return this.list.length;
+  }
+  canCreateStage() {
+    return this.list.length < this.maxStages;
+  }
+  canDeleteActiveStage() {
+    return this.list.length > 1 && this.list[0]?.id !== this.activeStageId;
+  }
+  resizeActiveStageLayers(width, height) {
+    const active = this.getActiveStage();
+    if (!active) return;
+    active.width = width;
+    active.height = height;
+    this.k.imageLayer.size({ width, height });
+    this.k.maskLayer.size({ width, height });
+  }
+};
+
 // src/Kanvas.ts
 var Kanvas = class {
   initial = true;
@@ -12853,21 +13356,11 @@ var Kanvas = class {
   outpaint;
   filter;
   pan;
+  shapes;
+  stages;
+  footer;
   // callbacks
   onchange;
-  initImage() {
-    this.imageLayer = new lib_default.Layer();
-    this.imageGroup = new lib_default.Group();
-    this.imageLayer.add(this.imageGroup);
-    return this.imageLayer;
-  }
-  initMask() {
-    this.maskLayer = new lib_default.Layer();
-    this.maskGroup = new lib_default.Group();
-    this.maskLayer.add(this.maskGroup);
-    this.maskLayer.opacity(0.5);
-    return this.maskLayer;
-  }
   destroy() {
     if (this.stage) {
       try {
@@ -12878,19 +13371,19 @@ var Kanvas = class {
   }
   initialize(defaultWidth = 1024, defaultHeight = 256) {
     this.destroy();
+    this.stages.reset();
     this.stage = new lib_default.Stage({
       container: `${this.containerId}-kanvas`,
       width: defaultWidth,
       height: defaultHeight
     });
-    this.stage.add(this.initImage());
-    this.stage.add(this.initMask());
-    this.layer = this.selectedLayer === "image" ? this.imageLayer : this.maskLayer;
-    this.group = this.selectedLayer === "image" ? this.imageGroup : this.maskGroup;
+    this.stages.initializeLayers(defaultWidth, defaultHeight);
+    this.stages.createStage("Stage 1");
     if (this.controls) this.controls.style.display = "none";
     if (this.helpers) this.helpers.bindStage();
     if (this.pan) this.pan.bindPan();
     if (this.outpaint) this.outpaint.outpaintActive = false;
+    if (this.shapes) this.shapes.drawShapes();
   }
   constructor(containerId, opts = {}) {
     this.onchange = () => {
@@ -12907,11 +13400,15 @@ var Kanvas = class {
     const canvasEl = document.createElement("div");
     canvasEl.className = "kanvas";
     canvasEl.id = `${this.containerId}-kanvas`;
+    const footerEl = document.createElement("div");
+    footerEl.id = `${this.containerId}-footer`;
     this.wrapper.textContent = "";
     this.wrapper.tabIndex = -1;
     this.wrapper.appendChild(toolbarEl);
     this.wrapper.appendChild(canvasEl);
+    this.wrapper.appendChild(footerEl);
     this.container = canvasEl;
+    this.stages = new Stages(this);
     const stageWidth = opts.width ?? 1024;
     const stageHeight = opts.height ?? 256;
     this.initialize(stageWidth, stageHeight);
@@ -12924,6 +13421,8 @@ var Kanvas = class {
     this.outpaint = new Outpaint(this);
     this.filter = new Filter(this);
     this.pan = new Pan(this);
+    this.shapes = new Shapes(this);
+    this.footer = new Footer(this);
     this.log = this.helpers.kanvasLog;
     if (this.initial) this.log(`konva=${lib_default.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
     this.controls = document.getElementById(`${this.containerId}-active-controls`);
@@ -12932,21 +13431,48 @@ var Kanvas = class {
     this.helpers.bindStage();
     this.toolbar.bindControls();
     this.pan.bindPan();
+    this.shapes.drawShapes();
     this.wrapper.focus();
     this.wrapper.addEventListener("paste", (evt) => this.upload.pasteImage(evt));
     const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
     resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
   }
+  async selectRegister() {
+    for (const shape of this.group.getChildren()) {
+      if (shape instanceof lib_default.Shape) shape.on("click", (evt) => this.selectNode(evt.target));
+    }
+  }
   async selectNode(node) {
+    if (!node) return;
+    const valid = node?.parent === this.group || node?.parent === this.layer;
+    if (!valid) return;
     this.pan.moving = false;
     this.selected = node;
-    if (!this.selected) return;
     const nodeType = this.selected.getClassName();
-    if (nodeType === "Image") this.helpers.showMessage(`Selected: ${nodeType} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
-    else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType} points=${this.selected.points().length / 2}`);
-    else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    if (nodeType === "Image") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${this.selected.points().length / 2}`);
+    else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
+    this.layer.find("Transformer").forEach((t) => t.destroy());
+    if (nodeType !== "Image") {
+      node.draggable(true);
+      const tr = new lib_default.Transformer({
+        nodes: [this.selected],
+        rotateEnabled: nodeType !== "Line",
+        // disable rotation for lines
+        borderStroke: "#298",
+        borderStrokeWidth: 2,
+        anchorFill: "#298",
+        anchorStroke: "#298",
+        anchorStrokeWidth: 2,
+        anchorSize: 10,
+        anchorCornerRadius: 2
+      });
+      this.layer.add(tr);
+      this.layer.batchDraw();
+    }
+    this.shapes.refresh();
   }
   async removeNode(node) {
     if (!node) return;
@@ -12957,6 +13483,7 @@ var Kanvas = class {
     }
     this.layer.draw();
     this.helpers.showMessage(`Node removed: ${nodeType}`);
+    this.shapes.refresh();
   }
   stopActions() {
     this.resize.stopClip();

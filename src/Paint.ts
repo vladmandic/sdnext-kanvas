@@ -20,6 +20,7 @@ export default class Paint {
   textFont = 'Calibri';
   textValue = 'Hello World';
   isPainting = false;
+  lines = [] as Konva.Line[];
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -29,7 +30,7 @@ export default class Paint {
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
-    let lastLine;
+    // let lastLine;
 
     this.k.stage.on('mousedown touchstart', () => {
       if (this.k.imageMode !== 'paint') {
@@ -37,14 +38,13 @@ export default class Paint {
         return;
       }
       this.isPainting = true;
-      this.k.layer = this.k.selectedLayer === 'image' ? this.k.imageLayer : this.k.maskLayer;
-      this.k.group = this.k.selectedLayer === 'image' ? this.k.imageGroup : this.k.maskGroup;
+      this.k.stages.syncActiveLayerRefs();
       const pos = this.k.stage.getPointerPosition();
       const brushColor = this.k.selectedLayer === 'image' ? this.k.paint.brushColor : hexToGrayscale(this.k.paint.brushColor);
       if (!pos) return;
       const x = pos.x / this.k.resize.scale;
       const y = pos.y / this.k.resize.scale;
-      lastLine = new Konva.Line({
+      const newLine = new Konva.Line({
         stroke: brushColor,
         strokeWidth: 2 * this.k.paint.brushSize,
         opacity: this.k.paint.brushOpacity,
@@ -53,14 +53,14 @@ export default class Paint {
         lineJoin: 'round',
         points: [x, y, x, y], // add point twice, so we have some drawings even on a simple click
       });
-      lastLine.on('click', () => this.k.selectNode(lastLine));
-      this.k.group.add(lastLine);
+      newLine.on('click', (evt) => this.k.selectNode(evt.target));
+      this.lines.push(newLine);
+      this.k.group.add(newLine);
     });
 
     this.k.stage.on('mouseup touchend', () => {
       if (this.isPainting) {
         this.isPainting = false;
-        lastLine = null;
       }
     });
 
@@ -69,6 +69,7 @@ export default class Paint {
       if (!this.isPainting) return;
       e.evt.preventDefault();
       const pos = this.k.stage.getPointerPosition();
+      const lastLine = this.lines[this.lines.length - 1];
       if (!pos || !lastLine) return;
       const x = pos.x / this.k.resize.scale;
       const y = pos.y / this.k.resize.scale;

@@ -3,6 +3,20 @@ import type Kanvas from './Kanvas';
 export default class Toolbar {
   k: Kanvas;
   el: HTMLElement;
+  btnSelectImage: HTMLElement | null = null;
+  btnSelectMask: HTMLElement | null = null;
+  btnUpload: HTMLElement | null = null;
+  btnPaste: HTMLElement | null = null;
+  btnRemove: HTMLElement | null = null;
+  btnReset: HTMLElement | null = null;
+  btnRefresh: HTMLElement | null = null;
+  btnResize: HTMLElement | null = null;
+  btnCrop: HTMLElement | null = null;
+  btnPaint: HTMLElement | null = null;
+  btnFilters: HTMLElement | null = null;
+  btnText: HTMLElement | null = null;
+  btnOutpaint: HTMLElement | null = null;
+
   constructor(k: Kanvas) {
     this.k = k;
     this.el = document.getElementById(`${this.k.containerId}-toolbar`) as HTMLElement;
@@ -15,7 +29,7 @@ export default class Toolbar {
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Upload image to active layer" id="${this.k.containerId}-button-upload">\udb82\udc7c</span>
       <span class="kanvas-button" title="Paste image from clipboard" id="${this.k.containerId}-button-paste">\udb86\ude00</span>
-      <span class="kanvas-button" title="Remove currently selected image" id="${this.k.containerId}-button-remove">\udb85\udc18</span>
+      <span class="kanvas-button" title="Remove currently selected object" id="${this.k.containerId}-button-remove">\udb85\udc18</span>
       <span class="kanvas-button" title="Reset stage" id="${this.k.containerId}-button-reset">\uf1b8</span>
 
       <span id="${this.k.containerId}-active-controls" style="display: none;">
@@ -102,8 +116,6 @@ export default class Toolbar {
       <span class="kanvas-separator"> | </span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\ueb52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\udb80\udefd</span>
-
-      <span class="kanvas-text" id="${this.k.containerId}-message"></span>
     `;
   }
 
@@ -148,21 +160,29 @@ export default class Toolbar {
       document.documentElement.style.setProperty('--kanvas-size', sizePx);
     };
     // group: image,mask,opacity
-    document.getElementById(`${this.k.containerId}-button-image`)?.addEventListener('click', async (e) => {
+    this.btnSelectImage = document.getElementById(`${this.k.containerId}-button-image`);
+    this.btnSelectMask = document.getElementById(`${this.k.containerId}-button-mask`);
+    this.btnSelectImage?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.selectedLayer = 'image';
-      document.getElementById(`${this.k.containerId}-button-image`)?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-button-mask`)?.classList.remove('active');
+      this.k.layer = this.k.imageLayer;
+      this.k.group = this.k.imageGroup;
+      this.btnSelectImage?.classList.add('active');
+      this.btnSelectMask?.classList.remove('active');
       this.k.helpers.showMessage('Active: image layer');
+      this.k.shapes.refresh();
     });
-    document.getElementById(`${this.k.containerId}-button-mask`)?.addEventListener('click', async (e) => {
+    this.btnSelectMask?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.selectedLayer = 'mask';
-      document.getElementById(`${this.k.containerId}-button-image`)?.classList.remove('active');
-      document.getElementById(`${this.k.containerId}-button-mask`)?.classList.add('active');
+      this.k.layer = this.k.maskLayer;
+      this.k.group = this.k.maskGroup;
+      this.btnSelectImage?.classList.remove('active');
+      this.btnSelectMask?.classList.add('active');
       this.k.helpers.showMessage('Active: mask layer');
+      this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener('input', async (e) => {
       e.preventDefault();
@@ -171,34 +191,41 @@ export default class Toolbar {
     });
 
     // group: upload,remove,refresh,reset
-    document.getElementById(`${this.k.containerId}-button-upload`)?.addEventListener('click', async (e) => {
+    this.btnPaste = document.getElementById(`${this.k.containerId}-button-paste`);
+    this.btnUpload = document.getElementById(`${this.k.containerId}-button-upload`);
+    this.btnRemove = document.getElementById(`${this.k.containerId}-button-remove`);
+    this.btnReset = document.getElementById(`${this.k.containerId}-button-reset`);
+    this.btnRefresh = document.getElementById(`${this.k.containerId}-button-refresh`);
+    this.btnUpload?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'upload';
       this.resetButtons();
       this.k.upload.uploadFile(false);
     });
-    document.getElementById(`${this.k.containerId}-button-paste`)?.addEventListener('click', async (e) => {
+    this.btnPaste?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const status = await document.execCommand('paste');
       if (!status) this.k.upload.pasteImage();
     });
-    document.getElementById(`${this.k.containerId}-button-remove`)?.addEventListener('click', async (e) => {
+    this.btnRemove?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.removeNode(this.k.selected);
     });
-    document.getElementById(`${this.k.containerId}-button-reset`)?.addEventListener('click', async (e) => {
+    this.btnReset?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.initialize();
+      this.btnSelectImage?.click(); // select image layer by default after reset
     });
-    document.getElementById(`${this.k.containerId}-button-refresh`)?.addEventListener('click', async (e) => {
+    this.btnRefresh?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.stopActions();
       this.resetButtons();
+      this.k.imageMode = 'none';
     });
 
     // group: size inputs
@@ -251,44 +278,48 @@ export default class Toolbar {
     });
 
     // group: resize,crop
-    document.getElementById(`${this.k.containerId}-button-resize`)?.addEventListener('click', async (e) => {
+    this.btnResize = document.getElementById(`${this.k.containerId}-button-resize`);
+    this.btnCrop = document.getElementById(`${this.k.containerId}-button-crop`);
+    this.btnResize?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'resize';
       this.k.helpers.showMessage('Image mode=resize');
       this.k.resize.startResize();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-resize`)?.classList.add('active');
+      this.btnResize?.classList.add('active');
     });
-    document.getElementById(`${this.k.containerId}-button-crop`)?.addEventListener('click', async (e) => {
+    this.btnCrop?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'crop';
       this.k.helpers.showMessage('Image mode=crop');
       this.k.resize.startClip();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-crop`)?.classList.add('active');
+      this.btnCrop?.classList.add('active');
     });
 
     // group: paint,text
-    document.getElementById(`${this.k.containerId}-button-paint`)?.addEventListener('click', async (e) => {
+    this.btnPaint = document.getElementById(`${this.k.containerId}-button-paint`);
+    this.btnPaint?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'paint';
       this.k.helpers.showMessage('Image mode=paint');
       this.k.paint.startPaint();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-paint`)?.classList.add('active');
+      this.btnPaint?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
     });
-    document.getElementById(`${this.k.containerId}-button-text`)?.addEventListener('click', async (e) => {
+    this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
+    this.btnText?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'text';
       this.k.helpers.showMessage('Image mode=text');
       this.k.paint.startText();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-text`)?.classList.add('active');
+      this.btnText?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
       document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add('active');
     });
@@ -324,19 +355,19 @@ export default class Toolbar {
     });
 
     // group: outpaint
-    document.getElementById(`${this.k.containerId}-button-outpaint`)?.addEventListener('click', async (e) => {
+    this.btnOutpaint = document.getElementById(`${this.k.containerId}-button-outpaint`);
+    this.btnOutpaint?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'outpaint';
-      const outpaintButton = document.getElementById(`${this.k.containerId}-button-outpaint`);
-      if (outpaintButton?.classList.contains('active')) {
-        document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.remove('active');
+      if (this.btnOutpaint?.classList.contains('active')) {
+        this.btnOutpaint?.classList.remove('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove('active');
         this.k.outpaint.doOutpaint();
       } else {
         this.k.stopActions();
         this.resetButtons();
-        document.getElementById(`${this.k.containerId}-button-outpaint`)?.classList.add('active');
+        this.btnOutpaint?.classList.add('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add('active');
       }
     });
@@ -354,15 +385,16 @@ export default class Toolbar {
     });
 
     // group: filters
-    document.getElementById(`${this.k.containerId}-button-filters`)?.addEventListener('click', async (e) => {
+    this.btnFilters = document.getElementById(`${this.k.containerId}-button-filters`);
+    this.btnFilters?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'filters';
       this.k.helpers.showMessage('Image mode=filters');
       this.k.stopActions();
-      if (document.getElementById(`${this.k.containerId}-button-filters`)?.classList.contains('active')) this.k.filter.applyFilter();
+      if (this.btnFilters?.classList.contains('active')) this.k.filter.applyFilter();
       this.resetButtons();
-      document.getElementById(`${this.k.containerId}-button-filters`)?.classList.add('active');
+      this.btnFilters?.classList.add('active');
       document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add('active');
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener('input', async (e) => {
