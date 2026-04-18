@@ -59,7 +59,7 @@ export default class Kanvas {
     }
   }
 
-  initialize(defaultWidth = 1024, defaultHeight = 256) {
+  initialize(defaultWidth = 1024, defaultHeight = 310) {
     this.destroy();
     this.stages.reset();
     this.stage = new Konva.Stage({
@@ -132,6 +132,7 @@ export default class Kanvas {
     this.helpers.bindEvents();
     this.helpers.bindStage();
     this.shapes.drawShapes();
+    this.settings.mountIntoOverlay();
     this.toolbar.bindControls();
     this.pan.bindPan();
     this.history.init();
@@ -159,8 +160,11 @@ export default class Kanvas {
     this.pan.moving = false;
     this.selected = node;
     const nodeType = this.selected.getClassName();
-    if (nodeType === 'Image') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
-    else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${(this.selected as Konva.Line).points().length / 2}`);
+    if (nodeType === 'Image') {
+      this.helpers.showMessage(
+        `Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`,
+      );
+    } else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${(this.selected as Konva.Line).points().length / 2}`);
     else if (nodeType === 'Text') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
 
@@ -283,7 +287,6 @@ export default class Kanvas {
     this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     return result;
   }
-
 }
 
 // expose Kanvas globally

@@ -71,6 +71,7 @@ export default class Paint {
   wandCache: WandCache | null = null;
   wandDragCanvas: HTMLCanvasElement | null = null;
   wandDragCtx: CanvasRenderingContext2D | null = null;
+  wandFillIndex = 0;
   lines = [] as Konva.Line[];
 
   constructor(k: Kanvas) {
@@ -147,7 +148,7 @@ export default class Paint {
     const width = Math.round(sourceCanvas.width);
     const height = Math.round(sourceCanvas.height);
     const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+    const { data } = imageData;
     const pixels = width * height;
     const l = new Float32Array(pixels);
     const a = new Float32Array(pixels);
@@ -277,7 +278,8 @@ export default class Paint {
       opacity: 1,
       globalCompositeOperation: this.brushMode as CanvasRenderingContext2D['globalCompositeOperation'],
     });
-    image.name(`wand-fill-${Date.now()}`);
+    this.wandFillIndex += 1;
+    image.name(`wand-fill-${this.wandFillIndex}`);
     image.on('click', () => this.k.selectNode(image));
     this.k.group.add(image);
     this.k.layer.batchDraw();

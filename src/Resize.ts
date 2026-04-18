@@ -44,6 +44,7 @@ export default class Resize {
       } else {
         kanvasEl.style.marginLeft = '0px';
       }
+      this.k.wrapper.style.setProperty('--kanvas-canvas-height', `${this.k.stage.height() * this.scale}px`);
     }
     if (this.k.stage.height() > 128) {
       this.k.container.style.height = `${this.k.stage.height()}px`; // resize container element
@@ -119,6 +120,11 @@ export default class Resize {
   async resizeStageToFit(el: Konva.Image | Konva.Group, force = false) {
     clearTimeout(this.debounceResize);
     this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
+  }
+
+  async resizeStageToFitNow(el: Konva.Image | Konva.Group, force = false) {
+    clearTimeout(this.debounceResize);
+    await this._resizeStage(el, force);
   }
 
   async resizeStage(width: number, height: number) {

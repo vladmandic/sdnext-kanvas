@@ -3,10 +3,34 @@
 [Kanvas](https://github.com/vladmandic/sdnext-kanvas) is an advanced image editing module for [SD.Next](https://github.com/vladmandic/sdnext)  
 with tools for upload, paste, paint, resize, crop, filters, text, outpaint, masking, and multi-stage workflows.
 
+## At a Glance
+
+- Edit on either the **image layer** or **mask layer**.
+- Work in up to 10 stages, each with independent image and mask content.
+- Export/processing always uses the **currently active stage**.
+- SD.Next workflow is chosen automatically from available inputs (text/image/mask).
+
+## Quick Navigation
+
+- [Stages](#stages)
+- [Working with Objects](#working-with-objects)
+- [Text vs Image vs Inpaint](#text-vs-image-vs-inpaint)
+- [Toolbar](#toolbar)
+- [Overlay](#overlay)
+- [Magic Wand](#magic-wand)
+- [Outpaint](#outpaint)
+- [Settings](#settings)
+- [Server-side Masking](#server-side-masking)
+- [Disable Kanvas](#disable-kanvas)
+
 ![Image](https://github.com/user-attachments/assets/54b25586-b611-4d70-a28f-ee3360944034)
 
+> [!TIP]
+> For effective editing in Kanvas, collapse SD.Next panels so Kanvas has maximum workspace.
+> This applies to the left sidebar, right sidebar, and output panel.
+
 > [!NOTE]
-> Kanvas is enabled by default and available in unified **Control** interfaces in both *ModernUI* and *StandardUI*.  
+> Kanvas is enabled by default and available in unified **Control** interfaces in both *ModernUI* and *StandardUI*.
 > Legacy **Img2Img** continues to use standard *Gradio* image handling.
 
 > [!TIP]
@@ -39,9 +63,6 @@ Rules and limits:
 > [!IMPORTANT]
 > Processing/export uses the **currently active stage only**.  
 > Switch to the stage you want before sending to SD.Next.
-
-> [!TIP]
-> For a full-screen Kanvas experience, collapse left/right sidebars and output panel.
 
 ### Working with Objects
 
@@ -76,7 +97,15 @@ This is useful when shapes overlap and are hard to select directly.
 When processing starts, Kanvas rasterizes the **active stage** layers and SD.Next picks workflow by available inputs:
 - If image is empty, SD.Next uses *text-to-image*
 - If image exists, SD.Next uses *image-to-image*
-- If mask exists, SD.Next uses *inpainting*
+- If mask contains content, SD.Next uses *inpainting*
+
+In short, this decision can be summarized as:
+
+| Inputs on active stage | SD.Next mode |
+| --- | --- |
+| No image, no mask | Text-to-image |
+| Image present, no mask | Image-to-image |
+| Any image state with mask content present | Inpainting |
 
 > [!NOTE]
 > Deselecting active transforms before processing helps avoid accidental edits.
@@ -84,6 +113,15 @@ When processing starts, Kanvas rasterizes the **active stage** layers and SD.Nex
 ### Toolbar
 
 <img width="760" height="37" alt="Image" src="https://github.com/user-attachments/assets/f6ef598d-aa32-4f9c-bc07-58e6b95b9971" />
+
+### Overlay
+
+Kanvas includes a floating overlay panel that groups stage controls, shape lists, and active tool controls.
+
+- Use the overlay collapse button to hide or expand the overlay panel.
+- Drag the overlay by grabbing empty space in the top resolution bar.
+- Double-click the top resolution bar to reset overlay position to its default location.
+- The overlay hosts both the stages panel and the shapes panel for the active layer.
 
 ### Layer Selection
 
@@ -187,7 +225,30 @@ Text is created on the active layer.
 Zoom with mouse wheel, touch gestures, or toolbar buttons.  
 *Zoom lock* toggles auto-fit behavior to keep manual zoom/1:1 workflow.
 
+### Practical Tips
+
+- Deselect active transform handles before processing to avoid accidental edits.
+- Use *Zoom lock* for precise 1:1 work.
+- Hold *Ctrl* and drag to pan when zoomed in.
+- For outpainting, set SD.Next *Input -> Denoising strength* appropriately (typically 0.65-0.85).
+
 ### Settings
+
+Use *Settings* to tune Kanvas behavior and UI defaults. Settings are stored in browser local storage and reused across sessions.
+
+Available options:
+- **Toolbar size**: changes toolbar icon/button size.
+- **Toolbar hue**: adjusts the toolbar color theme hue.
+- **Overlay width**: changes overlay panel width.
+- **Allow toolbar hide**: allows the toolbar to be hidden.
+- **Zoom lock**: keeps manual zoom behavior instead of auto-fit.
+- **Max canvas size**: limits stage size during resize operations.
+- **Brush size**: sets the default brush size.
+- **Outpaint fill**: toggles fill behavior for outpaint operations.
+- **Show messages**: enables/disables status toast messages.
+- **Message timeout**: controls how long status messages stay visible.
+
+Use *Reset* in the settings panel to return all settings to default values.
 
 <img width="318" height="356" alt="Image" src="https://github.com/user-attachments/assets/1453e193-3108-4833-94fc-09359c75b68a" />
 

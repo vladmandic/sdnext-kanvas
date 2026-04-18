@@ -82,8 +82,14 @@ export default class Stages {
 
     this.boundImageGroup.on('add.stages-thumb remove.stages-thumb destroy.stages-thumb', refresh);
     this.boundMaskGroup.on('add.stages-thumb remove.stages-thumb destroy.stages-thumb', refresh);
-    this.boundImageGroup.on('xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb', schedule);
-    this.boundMaskGroup.on('xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb', schedule);
+    this.boundImageGroup.on(
+      'xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb',
+      schedule,
+    );
+    this.boundMaskGroup.on(
+      'xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb',
+      schedule,
+    );
   }
 
   mountOverlay(parentEl: HTMLElement) {
@@ -110,7 +116,7 @@ export default class Stages {
     this.btnAdd = document.createElement('span');
     this.btnAdd.className = 'kanvas-button kanvas-stage-control';
     this.btnAdd.title = 'Add stage';
-    this.btnAdd.textContent = '+';
+    this.btnAdd.textContent = '\uf0fe';
     this.btnAdd.addEventListener('click', (evt) => {
       evt.preventDefault();
       evt.stopPropagation();
@@ -170,7 +176,7 @@ export default class Stages {
         const remove = document.createElement('span');
         remove.className = 'kanvas-button kanvas-stage-remove';
         remove.title = `Delete ${stage.label}`;
-        remove.textContent = '×';
+        remove.textContent = '\uf2d3';
         remove.addEventListener('click', (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
@@ -186,7 +192,7 @@ export default class Stages {
       resolution.textContent = `${Math.round(stage.width)}x${Math.round(stage.height)}`;
       meta.appendChild(resolution);
 
-      item.appendChild(meta);
+      thumb.appendChild(meta);
 
       item.addEventListener('click', (evt) => {
         evt.preventDefault();
@@ -209,11 +215,11 @@ export default class Stages {
   }
 
   getStageList() {
-    return this.list.map((stage, index) => ({
+    return this.list.map((stage) => ({
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
-      removable: index > 0,
+      removable: true,
       width: stage.width,
       height: stage.height,
       thumbnail: this.getStageThumbnail(stage.id),
@@ -317,25 +323,27 @@ export default class Stages {
   }
 
   deleteStage(id: string) {
-    if (this.list.length <= 1) return false;
-    if (this.list[0]?.id === id) {
-      this.k.helpers?.showMessage?.('First stage cannot be deleted');
-      return false;
-    }
     const index = this.list.findIndex((stage) => stage.id === id);
     if (index === -1) return false;
     const [removed] = this.list.splice(index, 1);
     removed.imageGroup.destroy();
     removed.maskGroup.destroy();
+    this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
+    if (this.list.length === 0) {
+      // last stage removed — reinitialize
+      this.k.initialize(removed.width, removed.height);
+      return true;
+    }
     if (this.activeStageId === id) {
-      this.activeStageId = this.list[0].id;
+      // switch to the stage now at the same index (or last)
+      const nextIndex = Math.min(index, this.list.length - 1);
+      this.activeStageId = this.list[nextIndex].id;
       this.switchStage(this.activeStageId);
     } else {
       this.k.stage.batchDraw();
       this.renderOverlay();
       this.k.shapes?.refresh();
     }
-    this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
     this.k.history.capture('Delete stage');
     return true;
   }
@@ -349,7 +357,7 @@ export default class Stages {
   }
 
   canDeleteActiveStage() {
-    return this.list.length > 1 && this.list[0]?.id !== this.activeStageId;
+    return this.list.length >= 1;
   }
 
   resizeActiveStageLayers(width: number, height: number) {

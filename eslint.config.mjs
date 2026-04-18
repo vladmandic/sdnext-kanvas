@@ -76,7 +76,7 @@ const jsConfig = defineConfig([
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/indent': ['error', 2],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: true }],
-      '@stylistic/max-len': ['warn', { code: 275, tabWidth: 2 }],
+      '@stylistic/max-len': ['warn', { code: 300, tabWidth: 2 }],
       '@stylistic/max-statements-per-line': ['error', { max: 2 }],
       '@stylistic/object-curly-newline': ['error', { multiline: true, consistent: true }],
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],

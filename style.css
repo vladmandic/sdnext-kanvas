@@ -2,11 +2,11 @@
   --kanvas-font: 'NotoSans';
 }
 
-.kanvas { width: 100%; height: 100%; min-height: 128px; min-width: 128px; margin: auto; }
+.kanvas { width: 100%; height: 100%; min-height: 8rem; min-width: 8rem; margin: auto; }
 .kanvas-wrapper { width: fit-content; height: fit-content; font-family: var(--kanvas-font); width: 100%; height: 100%; min-height: 100%; position: relative; }
-.kanvas-toolbar { font-size: var(--kanvas-size); line-height: calc(2 * var(--kanvas-size)); vertical-align: middle; opacity: 0%; background-color: black; min-width: 100%; position: sticky; top: 0; left:0; z-index:1; border-radius: 4px; }
+.kanvas-toolbar { font-size: var(--kanvas-size); line-height: calc(2 * var(--kanvas-size)); vertical-align: middle; opacity: 0%; background-color: black; min-width: 100%; position: sticky; top: 0; left:0; z-index:1; border-radius: 0.25rem; }
 .kanvas-toolbar.active { opacity: 100%; transition: opacity,background-color 0.2s ease-in; background-color: hsl(var(--kanvas-color), 0%, 10%); }
-.kanvas-toolbar span { filter: drop-shadow(2px 2px 2px hsl(var(--kanvas-color), 50%, 0%)); }
+.kanvas-toolbar span { filter: drop-shadow(0.125em 0.125em 0.125em hsl(var(--kanvas-color), 50%, 0%)); }
 
 .kanvas-footer {
   position: fixed;
@@ -19,8 +19,10 @@
   position: absolute;
   top: calc(2.2 * var(--kanvas-size));
   right: 0;
-  width: 240px;
-  max-height: min(72vh, 640px);
+  width: var(--kanvas-overlay-width, 15rem);
+  min-width: 8.75rem;
+  max-width: 25rem;
+  max-height: var(--kanvas-canvas-height, min(72vh, 40rem));
   display: flex;
   flex-direction: column;
   gap: 0.3em;
@@ -28,18 +30,23 @@
   pointer-events: auto;
   background: hsl(var(--kanvas-color), 0%, 9%);
   border: 1px solid hsl(var(--kanvas-color), 10%, 24%);
-  border-radius: 6px;
-  box-shadow: 0 6px 16px hsla(var(--kanvas-color), 20%, 2%, 0.55);
+  border-radius: 0.375rem;
+  box-shadow: 0 0.375rem 1rem hsla(var(--kanvas-color), 20%, 2%, 0.55);
   padding: 0.4em;
   opacity: 0.85;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .kanvas-resolution {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.2em;
   border-bottom: 1px solid hsl(var(--kanvas-color), 10%, 20%);
   padding: 0.1em 0.1em 0.35em 0.1em;
+  cursor: grab;
+  user-select: none;
 }
 
 .kanvas-resolution .kanvas-button {
@@ -52,17 +59,28 @@
   line-height: 1.6;
   background: hsl(var(--kanvas-color), 0%, 22%);
   color: hsl(var(--kanvas-color), 0%, 100%) !important;
-  border-radius: 4px;
+  border-radius: 0.25rem;
   padding: 0.15em 0.35em;
   border: none;
+  text-align: right;
+  width: 3.6em;
+}
+
+.kanvas-shapes {
+  margin-top: 0.2em;
 }
 
 .kanvas-shapes-titles {
   color: hsl(var(--kanvas-color), 0%, 90%);
-  font-size: 0.82em;
+  font-size: 0.8em;
   line-height: 1.25em;
   user-select: none;
   cursor: pointer;
+  padding-bottom: 0.2em;
+}
+
+.kanvas-overlay.overlay-collapsed > :not(.kanvas-resolution) {
+  display: none;
 }
 
 .kanvas-overlay.collapsed .kanvas-shapes .kanvas-shapes-list {
@@ -83,8 +101,8 @@
   font-size: 0.76em;
   text-align: left;
   border: none;
-  border-radius: 4px;
-  padding: 0.35em 0.45em;
+  border-radius: 0.25rem;
+  padding: 0.375em;
   color: hsl(var(--kanvas-color), 0%, 88%);
   background: hsl(var(--kanvas-color), 4%, 15%);
   cursor: pointer;
@@ -105,6 +123,35 @@
   padding: 0.25em;
 }
 
+.kanvas-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  border-top: 1px solid hsl(var(--kanvas-color), 10%, 20%);
+  padding-top: 0.35em;
+}
+
+.kanvas-tools-title {
+  font-size: 0.8em;
+  color: hsl(var(--kanvas-color), 0%, 78%);
+  line-height: 1.2;
+  user-select: none;
+}
+
+.kanvas-tools .kanvas-section {
+  display: none;
+  opacity: 0;
+}
+
+.kanvas-tools .kanvas-section.active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2em;
+  opacity: 0.9;
+  animation: kanvas-fade-in 0.5s ease-in forwards;
+}
+
 .kanvas-stages {
   display: flex;
   flex-direction: column;
@@ -116,7 +163,7 @@
   align-items: center;
   gap: 0.3em;
   color: hsl(var(--kanvas-color), 0%, 90%);
-  font-size: 0.82em;
+  font-size: 0.8em;
   cursor: pointer;
 }
 
@@ -126,27 +173,30 @@
 
 .kanvas-stages-titles .kanvas-stage-control {
   margin-left: auto;
+  font-size: 1.2em;
 }
 
 .kanvas-stages-list {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 0.2em;
   max-height: 45vh;
   overflow-y: auto;
 }
 
 .kanvas-stage-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.45em;
+  display: block;
+  position: relative;
   text-align: left;
   border: none;
-  border-radius: 4px;
-  padding: 0.25em 0.35em;
+  border-radius: 0.25rem;
+  padding: 0;
+  font-family: var(--kanvas-font);
   color: hsl(var(--kanvas-color), 0%, 88%);
   background: hsl(var(--kanvas-color), 4%, 15%);
   cursor: pointer;
+  overflow: hidden;
 }
 
 .kanvas-stage-item:hover {
@@ -155,28 +205,32 @@
 
 .kanvas-stage-item.active {
   background: hsl(var(--kanvas-color), 55%, 33%);
+  box-shadow: inset 0 0 0 0.125rem hsl(var(--kanvas-color), 65%, 58%), 0 0 0 0.0625rem hsla(var(--kanvas-color), 0%, 0%, 0.35);
+}
+
+.kanvas-stage-item.active .kanvas-stage-meta {
+  background: linear-gradient(180deg, hsla(var(--kanvas-color), 65%, 18%, 0.72) 0%, hsla(var(--kanvas-color), 55%, 22%, 0.15) 48%, hsla(var(--kanvas-color), 65%, 16%, 0.84) 100%);
 }
 
 .kanvas-stage-thumb {
-  width: 120px;
-  max-width: 120px;
-  min-width: 120px;
-  height: 72px;
-  display: inline-flex;
+  position: relative;
+  width: 100%;
+  min-height: 4.5rem;
+  aspect-ratio: 5 / 3;
+  display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 4px;
+  border-radius: inherit;
   background: hsl(var(--kanvas-color), 0%, 12%);
   color: hsl(var(--kanvas-color), 0%, 62%);
   font-size: 0.72em;
 }
 
 .kanvas-stage-thumb img {
-  max-width: 120px;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -185,15 +239,21 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.76em;
+  font-weight: 600;
+  color: hsl(var(--kanvas-color), 0%, 96%);
+  text-shadow: 0 0.0625em 0.125em hsla(var(--kanvas-color), 0%, 0%, 0.7);
 }
 
 .kanvas-stage-meta {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.12em;
+  justify-content: space-between;
+  gap: 0.15em;
   min-width: 0;
-  flex: 1 1 auto;
+  padding: 0.35em 0.4em;
+  background: linear-gradient(180deg, hsla(var(--kanvas-color), 0%, 4%, 0.7) 0%, hsla(var(--kanvas-color), 0%, 4%, 0.08) 48%, hsla(var(--kanvas-color), 0%, 4%, 0.8) 100%);
 }
 
 .kanvas-stage-header {
@@ -208,18 +268,18 @@
   line-height: 1;
   margin-right: 0;
   letter-spacing: 0;
-  font-size: 0.9em;
+  font-size: 1.4em;
 }
 
 .kanvas-stage-resolution {
-  font-size: 0.7em;
-  color: hsl(var(--kanvas-color), 0%, 65%);
+  color: hsl(var(--kanvas-color), 0%, 86%);
   line-height: 1.2;
+  text-shadow: 0 0.0625em 0.125em hsla(var(--kanvas-color), 0%, 0%, 0.7);
 }
 
 @media (max-width: 900px) {
   .kanvas-overlay {
-    width: min(46vw, 280px);
+    width: min(46vw, 17.5rem);
   }
 }
 
@@ -227,12 +287,12 @@
   .kanvas-overlay {
     position: static;
     width: 100%;
-    max-height: 200px;
+    max-height: 12.5rem;
     margin-top: 0.4em;
   }
 
   .kanvas-shapes-list {
-    max-height: 150px;
+    max-height: 9.375rem;
   }
 }
 
@@ -241,21 +301,31 @@
 .kanvas-toolbar input[type="number"]:focus { outline: none; }
 
 .konvajs-content { background: black; width: fit-content !important; height: fit-content !important; }
-.kanvas-separator { opacity: 0.3; font-size: calc(1.1 * var(--kanvas-size)); position: relative; vertical-align: top; line-height: 1.6em; margin-right: -4px; cursor: pointer; filter: blur(1px) !important; }
+.kanvas-separator { opacity: 0.3; font-size: calc(1.1 * var(--kanvas-size)); position: relative; vertical-align: top; line-height: 1.6em; margin-right: -0.25rem; cursor: pointer; filter: blur(1px) !important; }
 
 .kanvas-section { display: none; opacity: 0.0; }
 .kanvas-section.active { display: inline; opacity: 0.75; animation: kanvas-fade-in 0.5s ease-in forwards; }
 
-.kanvas-button { color: hsl(var(--kanvas-color), 0%, 85%); padding: 0.3em 0.3em 0.3em 0.4em; border-radius: 4px; cursor: pointer; user-select: none; transition: background-color 0.3s ease; margin-right: -4px; letter-spacing: 2px; }
-.kanvas-button:hover { background-color: hsl(var(--kanvas-color), 50%, 40%); }
-.kanvas-button.active { background-color: hsl(var(--kanvas-color), 50%, 20%); }
+.kanvas-button { color: hsl(var(--kanvas-color), 0%, 85%); padding: 0.3em 0.3em 0.3em 0.4em; border-radius: 0.25rem; cursor: pointer; user-select: none; transition: background-color 0.3s ease, color 0.2s ease, text-shadow 0.2s ease, filter 0.2s ease; margin-right: -0.25rem; letter-spacing: 0.125em; }
+.kanvas-toolbar .kanvas-button {
+  text-shadow: 0 0.0625em 0 hsla(var(--kanvas-color), 0%, 100%, 0.06), 0 -0.0625em 0 hsla(var(--kanvas-color), 0%, 0%, 0.45), 0 0 0.375em hsla(var(--kanvas-color), 40%, 70%, 0.08);
+}
+.kanvas-toolbar .kanvas-button:hover {
+  color: hsl(var(--kanvas-color), 0%, 96%);
+  text-shadow: 0 0.0625em 0 hsla(var(--kanvas-color), 0%, 100%, 0.08), 0 -0.0625em 0 hsla(var(--kanvas-color), 0%, 0%, 0.5), 0 0 0.625em hsla(var(--kanvas-color), 55%, 75%, 0.16);
+  filter: saturate(1.08);
+}
+.kanvas-toolbar .kanvas-button.active {
+  color: hsl(var(--kanvas-color), 0%, 100%);
+  text-shadow: 0 0.0625em 0 hsla(var(--kanvas-color), 0%, 100%, 0.1), 0 -0.0625em 0 hsla(var(--kanvas-color), 0%, 0%, 0.55), 0 0 0.75em hsla(var(--kanvas-color), 60%, 78%, 0.2);
+}
 .kanvas-button.disabled { opacity: 0.5; }
 .kanvas-button.disabled:hover { opacity: 0.5; background-color: transparent; }
 
 .kanvas-paint-controls { display: flex; align-items: center; vertical-align: top; }
 
-.kanvas-slider { padding: 0; margin-top: calc(var(--kanvas-size)/-4); width: calc(4 * var(--kanvas-size)) !important; height: calc(0.6*var(--kanvas-size)); background-color: hsl(var(--kanvas-color), 0%, 25%) !important; overflow: hidden; cursor: pointer; -webkit-appearance: none; appearance: none; border-radius: 4px; vertical-align: middle; min-height: calc(0.6*var(--kanvas-size)); max-height: calc(0.6*var(--kanvas-size));}
-.kanvas-slider::-webkit-slider-thumb { height: calc(0.6*var(--kanvas-size)); width: calc(0.8*var(--kanvas-size)); background-color: hsl(180, 54%, 61%); border-radius: 4px; }
+.kanvas-slider { padding: 0; margin-top: calc(var(--kanvas-size)/-4); width: calc(4 * var(--kanvas-size)) !important; height: calc(0.6*var(--kanvas-size)); background-color: hsl(var(--kanvas-color), 0%, 25%) !important; overflow: hidden; cursor: pointer; -webkit-appearance: none; appearance: none; border-radius: 0.25rem; vertical-align: middle; min-height: calc(0.6*var(--kanvas-size)); max-height: calc(0.6*var(--kanvas-size));}
+.kanvas-slider::-webkit-slider-thumb { height: calc(0.6*var(--kanvas-size)); width: calc(0.8*var(--kanvas-size)); background-color: hsl(180, 54%, 61%); border-radius: 0.25rem; }
 .kanvas-slider::-webkit-slider-runnable-track, input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; }
 .kanvas-slider::-moz-range-thumb { height: calc(0.6*var(--kanvas-size)); width: calc(0.8*var(--kanvas-size)); background-color: hsl(180, 54%, 61%); }
 .kanvas-slider::-moz-range-track, input[type='range']::-webkit-slider-runnable-track { border: none; background: none; width: 100%; height: 100%; }
@@ -269,15 +339,86 @@
 .kanvas-colorpicker { width: calc(2 * var(--kanvas-size)); border: none; padding: 0; margin: 0; cursor: pointer; background: unset; vertical-align: middle; }
 .kanvas-checkbox { accent-color: hsl(var(--kanvas-color), 55%, 55%); vertical-align: middle; }
 
-.kanvas-textbox { border: none; background: hsl(var(--kanvas-color), 0%, 80%); width: calc(6 * var(--kanvas-size)); border-radius: 4px; }
+.kanvas-textbox { border: none; background: hsl(var(--kanvas-color), 0%, 80%); width: calc(6 * var(--kanvas-size)); border-radius: 0.25rem; }
 .kanvas-textbox:focus { outline: none; border: none; box-shadow: none; }
 
 .kanvas-text { font-size: 0.7em; cursor: pointer; opacity: 0.75; }
 .kanvas-text.active { display: inline; opacity: 0.75; animation: kanvas-fade-in 1.0s ease-in forwards; }
 
-.kanvas-settings { position: absolute; background: hsl(var(--kanvas-color), 0%, 10%); margin-top: 1em; margin-left: 1em; padding: 0.5em; border-radius: 4px; filter: drop-shadow(2px 2px 2px hsl(var(--kanvas-color), 50%, 0%)); top: calc(4 * var(--kanvas-size)); display: none; }
+.kanvas-settings {
+  display: none;
+  background: hsl(var(--kanvas-color), 0%, 10%);
+  margin-top: 0.15em;
+  padding: 0.5em;
+  border-radius: 0.25rem;
+  border: 1px solid hsl(var(--kanvas-color), 10%, 22%);
+  filter: drop-shadow(0.125em 0.125em 0.125em hsl(var(--kanvas-color), 50%, 0%));
+  display: none;
+  flex-direction: column;
+  gap: 0.28em;
+}
 
-.kanvas-settings label { display: inline-block; min-width: 180px; line-height: 2.4em; }
+.kanvas-settings-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: hsl(var(--kanvas-color), 0%, 90%);
+  font-size: 0.8em;
+  line-height: 1.2;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid hsl(var(--kanvas-color), 10%, 18%);
+  margin-bottom: 0.1em;
+}
+.kanvas-settings-reset {
+  background: none;
+  border: 1px solid hsl(var(--kanvas-color), 10%, 30%);
+  border-radius: 0.1875rem;
+  color: hsl(var(--kanvas-color), 40%, 70%);
+  font-size: 0.9em;
+  padding: 0.1em 0.4em;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.kanvas-settings-reset:hover {
+  border-color: hsl(var(--kanvas-color), 40%, 50%);
+  color: hsl(var(--kanvas-color), 60%, 85%);
+}
+
+.kanvas-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  min-height: 1.9em;
+}
+
+.kanvas-settings label {
+  color: hsl(var(--kanvas-color), 0%, 82%);
+  font-size: 0.75em;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.kanvas-settings input[type="number"] {
+  width: 5.2em;
+  font-family: 'NotoSans';
+  font-size: 0.75em;
+  line-height: 1.6;
+  background: hsl(var(--kanvas-color), 0%, 22%);
+  color: hsl(var(--kanvas-color), 0%, 100%);
+  border-radius: 0.25rem;
+  padding: 0.15em 0.35em;
+  border: none;
+  text-align: right;
+}
+
+.kanvas-settings input[type="number"]:focus {
+  outline: none;
+}
+
+.kanvas-settings input[type="checkbox"] {
+  accent-color: hsl(var(--kanvas-color), 55%, 55%);
+}
 
 .kanvas-size label { font-family: 'NotoSans'; font-size: 0.8em; vertical-align: top; }
 

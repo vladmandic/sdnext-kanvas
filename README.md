@@ -1,6 +1,6 @@
 # SD.Next Kanvas
 
-Canvas module for SD.Next
+**Kanvas** module for [SD.Next](https://github.com/vladmandic/sdnext)
 
 Docs: <https://vladmandic.github.io/sdnext-docs/Kanvas>
 

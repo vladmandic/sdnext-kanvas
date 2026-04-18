@@ -6,6 +6,8 @@ export default class Shapes {
   overlayEl: HTMLDivElement | null = null;
   resolutionEl: HTMLDivElement | null = null;
   panelEl: HTMLDivElement | null = null;
+  toolsEl: HTMLDivElement | null = null;
+  toolsTitleEl: HTMLDivElement | null = null;
   titleEl: HTMLDivElement | null = null;
   listEl: HTMLDivElement | null = null;
   boundStage: Konva.Stage | null = null;
@@ -27,24 +29,88 @@ export default class Shapes {
   }
 
   ensureOverlay() {
-    if (this.overlayEl && this.panelEl && this.titleEl && this.listEl) return;
+    if (this.overlayEl && this.panelEl && this.toolsEl && this.toolsTitleEl && this.titleEl && this.listEl) return;
     this.overlayEl = document.createElement('div');
     this.overlayEl.className = 'kanvas-overlay';
 
     this.resolutionEl = document.createElement('div');
     this.resolutionEl.className = 'kanvas-resolution';
     this.resolutionEl.innerHTML = `
-      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\udb82\ude68</span>
-      <label for="${this.k.containerId}-image-width"></label>
       <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
       <label for="${this.k.containerId}-image-height"></label>
       <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
+      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\udb82\ude68</span>
+      <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings"></span>
+      <span class="kanvas-button" title="Collapse overlay" id="${this.k.containerId}-button-overlay-collapse">\ueb6e</span>
+      <label for="${this.k.containerId}-image-width"></label>
     `;
     this.overlayEl.appendChild(this.resolutionEl);
+
+    // Make overlay draggable via the resolution bar
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let overlayStartLeft = 0;
+    let overlayStartTop = 0;
+
+    const resetOverlayPosition = () => {
+      this.overlayEl!.style.left = '';
+      this.overlayEl!.style.right = '0';
+      this.overlayEl!.style.top = 'calc(2.2 * var(--kanvas-size))';
+    };
+
+    this.resolutionEl.addEventListener('mousedown', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'SPAN') return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      const rect = this.overlayEl!.getBoundingClientRect();
+      const parentRect = this.k.wrapper.getBoundingClientRect();
+      overlayStartLeft = rect.left - parentRect.left;
+      overlayStartTop = rect.top - parentRect.top;
+      this.overlayEl!.style.right = 'unset';
+      this.overlayEl!.style.left = `${overlayStartLeft}px`;
+      this.overlayEl!.style.top = `${overlayStartTop}px`;
+      this.resolutionEl!.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    this.resolutionEl.addEventListener('dblclick', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'SPAN') return;
+      resetOverlayPosition();
+      e.preventDefault();
+    });
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      this.overlayEl!.style.left = `${overlayStartLeft + dx}px`;
+      this.overlayEl!.style.top = `${overlayStartTop + dy}px`;
+    };
+
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      this.resolutionEl!.style.cursor = '';
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
 
     this.panelEl = document.createElement('div');
     this.panelEl.className = 'kanvas-shapes';
     this.overlayEl.appendChild(this.panelEl);
+
+    this.toolsEl = document.createElement('div');
+    this.toolsEl.className = 'kanvas-tools';
+    this.toolsTitleEl = document.createElement('div');
+    this.toolsTitleEl.className = 'kanvas-tools-title';
+    this.toolsTitleEl.textContent = 'Tool: none';
+    this.toolsEl.appendChild(this.toolsTitleEl);
+    this.overlayEl.appendChild(this.toolsEl);
 
     this.titleEl = document.createElement('div');
     this.titleEl.className = 'kanvas-shapes-titles';
@@ -61,6 +127,21 @@ export default class Shapes {
     this.panelEl.appendChild(this.listEl);
 
     this.k.wrapper.appendChild(this.overlayEl);
+  }
+
+  getToolsContainer() {
+    this.ensureOverlay();
+    return this.toolsEl;
+  }
+
+  getOverlayContainer() {
+    this.ensureOverlay();
+    return this.overlayEl;
+  }
+
+  getToolsTitleElement() {
+    this.ensureOverlay();
+    return this.toolsTitleEl;
   }
 
   disconnectListeners() {

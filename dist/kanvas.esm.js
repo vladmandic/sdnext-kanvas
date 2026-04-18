@@ -11606,41 +11606,56 @@ var lib_default = Konva3;
 
 // src/Settings.ts
 var html = `
-  <h3>Kanvas Settings</h3>
-  <label for="toolbar-size">Toolbar size (px):</label>
-  <input type="number" id="kanvas-settings-size" name="kanvas-settings-size" min="8" max="48" value="18"/>
-  <br/>
-  <label for="toolbar-color">Toolbar color (hue):</label>
-  <input type="number" id="kanvas-settings-color" name="kanvas-settings-color" min="0" max="360" value="190"/>
-  <br/>
-  <label for="toolbar-size">Allow toolbar Hide:</label>
-  <input type="checkbox" id="kanvas-settings-allow-hide" name="kanvas-settings-allow-hide" checked/>
-  <br/>
-  <label for="zoom-lock">Zoom lock:</label>
-  <input type="checkbox" id="kanvas-settings-zoom-lock" name="kanvas-settings-zoom-lock"/>
-  <br/>
-  <label for="max-size">Max canvas size (px):</label>
-  <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="8192" value="2048"/>
-  <br/>
-  <label for="brush-size">Brush size (px):</label>
-  <input type="number" id="kanvas-settings-brush-size" name="kanvas-settings-brush-size" min="1" max="100" value="20"/>
-  <br/>
-  <label for="outpaint-fill">Outpaint fill:</label>
-  <input type="checkbox" id="kanvas-settings-outpaint-fill" name="kanvas-settings-outpaint-fill"/>
-  <br/>
-  <label for="message-show">Show messages:</label>
-  <input type="checkbox" id="kanvas-settings-message-show" name="kanvas-settings-message-show" checked/>
-  <br/>
-  <label for="message-timeout">Message timeout (ms):</label>
-  <input type="number" id="kanvas-settings-message-timeout" name="kanvas-settings-message-timeout" min="1000" max="20000" value="5000"/>
+  <div class="kanvas-settings-title">Settings<button id="kanvas-settings-reset" class="kanvas-settings-reset" title="Reset to defaults">Reset</button></div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-size">Toolbar size</label>
+    <input type="number" id="kanvas-settings-size" name="kanvas-settings-size" min="8" max="48" value="18" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-color">Toolbar hue</label>
+    <input type="number" id="kanvas-settings-color" name="kanvas-settings-color" min="0" max="360" value="190" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-overlay-width">Overlay width</label>
+    <input type="number" id="kanvas-settings-overlay-width" name="kanvas-settings-overlay-width" min="140" max="400" value="240" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-allow-hide">Allow toolbar hide</label>
+    <input type="checkbox" id="kanvas-settings-allow-hide" name="kanvas-settings-allow-hide" checked />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-zoom-lock">Zoom lock</label>
+    <input type="checkbox" id="kanvas-settings-zoom-lock" name="kanvas-settings-zoom-lock" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-max-size">Max canvas size</label>
+    <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="8192" value="2048" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-brush-size">Brush size</label>
+    <input type="number" id="kanvas-settings-brush-size" name="kanvas-settings-brush-size" min="1" max="100" value="20" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-outpaint-fill">Outpaint fill</label>
+    <input type="checkbox" id="kanvas-settings-outpaint-fill" name="kanvas-settings-outpaint-fill" />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-message-show">Show messages</label>
+    <input type="checkbox" id="kanvas-settings-message-show" name="kanvas-settings-message-show" checked />
+  </div>
+  <div class="kanvas-settings-row">
+    <label for="kanvas-settings-message-timeout">Message timeout</label>
+    <input type="number" id="kanvas-settings-message-timeout" name="kanvas-settings-message-timeout" min="1000" max="20000" value="5000" />
+  </div>
 `;
-var Settings = class {
+var Settings = class _Settings {
   k;
   el;
   settings = {
     allowHide: true,
     toolbarSize: 18,
     toolbarColor: 190,
+    overlayWidth: 240,
     brushSize: 20,
     outpaintFill: false,
     zoomLock: false,
@@ -11655,11 +11670,93 @@ var Settings = class {
     this.el.id = `${this.k.containerId}-settings`;
     this.el.className = "kanvas-settings";
     this.el.innerHTML = html;
-    this.k.wrapper.appendChild(this.el);
+    this.bindLiveControls();
+  }
+  defaults = { allowHide: true, toolbarSize: 18, toolbarColor: 190, overlayWidth: 240, brushSize: 20, outpaintFill: false, zoomLock: false, maxSize: 2048, messageShow: true, messageTimeout: 5e3 };
+  resetSettings() {
+    Object.assign(this.settings, this.defaults);
+    this.saveSettings();
+    this.populateInputs();
+  }
+  static clampOverlayWidth(value) {
+    return Math.min(Math.max(value, 140), 400);
+  }
+  bindLiveControls() {
+    const bind = (id, apply) => {
+      const el = this.el.querySelector(`#${id}`);
+      el?.addEventListener("input", () => apply(el));
+      el?.addEventListener("change", () => apply(el));
+    };
+    bind("kanvas-settings-size", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.toolbarSize = v;
+        this.saveSettings();
+      }
+    });
+    bind("kanvas-settings-color", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.toolbarColor = v;
+        this.saveSettings();
+      }
+    });
+    bind("kanvas-settings-overlay-width", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.overlayWidth = _Settings.clampOverlayWidth(v);
+        this.saveSettings();
+      }
+    });
+    bind("kanvas-settings-allow-hide", (el) => {
+      this.settings.allowHide = el.checked;
+      this.saveSettings();
+    });
+    bind("kanvas-settings-zoom-lock", (el) => {
+      this.settings.zoomLock = el.checked;
+      this.saveSettings();
+    });
+    bind("kanvas-settings-max-size", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.maxSize = v;
+        this.saveSettings();
+      }
+    });
+    bind("kanvas-settings-brush-size", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.brushSize = v;
+        this.saveSettings();
+      }
+    });
+    bind("kanvas-settings-outpaint-fill", (el) => {
+      this.settings.outpaintFill = el.checked;
+      this.saveSettings();
+    });
+    bind("kanvas-settings-message-show", (el) => {
+      this.settings.messageShow = el.checked;
+      this.saveSettings();
+    });
+    bind("kanvas-settings-message-timeout", (el) => {
+      const v = parseInt(el.value, 10);
+      if (!Number.isNaN(v)) {
+        this.settings.messageTimeout = v;
+        this.saveSettings();
+      }
+    });
+    const resetBtn = this.el.querySelector("#kanvas-settings-reset");
+    resetBtn?.addEventListener("click", () => this.resetSettings());
+  }
+  mountIntoOverlay() {
+    const overlay = this.k.shapes?.getOverlayContainer?.();
+    if (!overlay || this.el.parentElement === overlay) return;
+    overlay.insertBefore(this.el, overlay.children[1] || null);
   }
   setCSS() {
     document.documentElement.style.setProperty("--kanvas-size", `${this.settings.toolbarSize}px`);
     document.documentElement.style.setProperty("--kanvas-color", `${this.settings.toolbarColor}`);
+    document.documentElement.style.setProperty("--kanvas-overlay-width", `${_Settings.clampOverlayWidth(this.settings.overlayWidth)}px`);
   }
   readSettings() {
     if (window.localStorage) {
@@ -11676,31 +11773,22 @@ var Settings = class {
     this.setCSS();
     if (this.k.resize) this.k.resize.fitStage();
   }
+  populateInputs() {
+    this.el.querySelector("#kanvas-settings-allow-hide").checked = this.settings.allowHide;
+    this.el.querySelector("#kanvas-settings-size").value = String(this.settings.toolbarSize);
+    this.el.querySelector("#kanvas-settings-color").value = String(this.settings.toolbarColor);
+    this.el.querySelector("#kanvas-settings-overlay-width").value = String(this.settings.overlayWidth);
+    this.el.querySelector("#kanvas-settings-zoom-lock").checked = this.settings.zoomLock;
+    this.el.querySelector("#kanvas-settings-message-show").checked = this.settings.messageShow;
+    this.el.querySelector("#kanvas-settings-message-timeout").value = String(this.settings.messageTimeout);
+    this.el.querySelector("#kanvas-settings-brush-size").value = String(this.settings.brushSize);
+    this.el.querySelector("#kanvas-settings-outpaint-fill").checked = this.settings.outpaintFill;
+    this.el.querySelector("#kanvas-settings-max-size").value = String(this.settings.maxSize);
+  }
   showSettings() {
-    const isVisible = this.el.style.display === "block";
-    if (!isVisible) {
-      document.getElementById("kanvas-settings-allow-hide").checked = this.settings.allowHide;
-      document.getElementById("kanvas-settings-size").value = String(this.settings.toolbarSize);
-      document.getElementById("kanvas-settings-color").value = String(this.settings.toolbarColor);
-      document.getElementById("kanvas-settings-zoom-lock").checked = this.settings.zoomLock;
-      document.getElementById("kanvas-settings-message-show").checked = this.settings.messageShow;
-      document.getElementById("kanvas-settings-message-timeout").value = String(this.settings.messageTimeout);
-      document.getElementById("kanvas-settings-brush-size").value = String(this.settings.brushSize);
-      document.getElementById("kanvas-settings-outpaint-fill").checked = this.settings.outpaintFill;
-      document.getElementById("kanvas-settings-max-size").value = String(this.settings.maxSize);
-    } else {
-      this.settings.allowHide = document.getElementById("kanvas-settings-allow-hide").checked;
-      this.settings.toolbarSize = parseInt(document.getElementById("kanvas-settings-size").value, 10);
-      this.settings.toolbarColor = parseInt(document.getElementById("kanvas-settings-color").value, 10);
-      this.settings.zoomLock = document.getElementById("kanvas-settings-zoom-lock").checked;
-      this.settings.messageShow = document.getElementById("kanvas-settings-message-show").checked;
-      this.settings.messageTimeout = parseInt(document.getElementById("kanvas-settings-message-timeout").value, 10);
-      this.settings.brushSize = parseInt(document.getElementById("kanvas-settings-brush-size").value, 10);
-      this.settings.outpaintFill = document.getElementById("kanvas-settings-outpaint-fill").checked;
-      this.settings.maxSize = parseInt(document.getElementById("kanvas-settings-max-size").value, 10);
-      this.saveSettings();
-    }
-    this.el.style.display = isVisible ? "none" : "block";
+    const isVisible = this.el.style.display === "flex";
+    if (!isVisible) this.populateInputs();
+    this.el.style.display = isVisible ? "none" : "flex";
   }
   showInfo() {
     window.open("https://vladmandic.github.io/sdnext-docs/Kanvas/", "_blank", "");
@@ -11763,6 +11851,7 @@ var Helpers = class {
 var Toolbar = class {
   k;
   el;
+  toolsTitleEl = null;
   btnSelectImage = null;
   btnSelectMask = null;
   btnUpload = null;
@@ -11802,7 +11891,7 @@ var Toolbar = class {
         </span>
 
         <span class="kanvas-separator"> | </span>
-        <span class="kanvas-button" title="Reset actions and refresh view" id="${this.k.containerId}-button-refresh">\u{F19FE}</span>
+        <span class="kanvas-button" title="Switch to select mode" id="${this.k.containerId}-button-refresh">\uF124</span>
         <span class="kanvas-button" title="Move or resize currently selected image" id="${this.k.containerId}-button-resize">\u{F0655}</span>
         <span class="kanvas-button" title="Crop currently selected image" id="${this.k.containerId}-button-crop">\u{F019E}</span>
         <span class="kanvas-button" title="Free Paint in currently selected layer" id="${this.k.containerId}-button-paint">\uF1FC</span>
@@ -11812,7 +11901,6 @@ var Toolbar = class {
         <span class="kanvas-button" title="Draw text" id="${this.k.containerId}-button-text">\u{F0284}</span>
 
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
           <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
@@ -11838,13 +11926,11 @@ var Toolbar = class {
         </span>
 
         <span id="${this.k.containerId}-outpaint-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-outpaint-blur" class="kanvas-slider" min="0" max="1" step="0.01" value="0.35" title="Outpaint edge blur" />
           <input type="range" id="${this.k.containerId}-outpaint-expand" class="kanvas-slider" min="0" max="1" step="0.01" value="0.15" title="Outpaint edge expand" />
         </span>
 
         <span id="${this.k.containerId}-filter-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-filter-value" class="kanvas-slider" min="0" max="100" step="1" value="10" title="Filter value" />
           <select id="${this.k.containerId}-filter-name" class="kanvas-select" title="Active image filter">
             <option value="blur">blur</option>
@@ -11861,7 +11947,6 @@ var Toolbar = class {
         </span>
 
         <span id="${this.k.containerId}-text-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="text" id="${this.k.containerId}-text-font" class="kanvas-textbox" value="Calibri" title="Text font" />
           <input type="text" id="${this.k.containerId}-text-value" class="kanvas-textbox" placeholder="enter text" title="Text value" />
         </span>
@@ -11872,8 +11957,6 @@ var Toolbar = class {
         <span class="kanvas-button" title="Zoom out" id="${this.k.containerId}-button-zoomout">\uF532</span>
       </span>
 
-      <span class="kanvas-separator"> | </span>
-      <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\uEB52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\u{F02FD}</span>
     `;
   }
@@ -11890,6 +11973,7 @@ var Toolbar = class {
     document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-text-controls`)?.classList.remove("active");
     document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
+    this.setToolsTitle("none");
     this.k.imageLayer.batchDraw();
     this.k.maskLayer.batchDraw();
   }
@@ -11903,7 +11987,22 @@ var Toolbar = class {
     this.btnUndo?.classList.toggle("disabled", !canUndo);
     this.btnRedo?.classList.toggle("disabled", !canRedo);
   }
+  mountOverlayTools() {
+    const toolsContainer = this.k.shapes.getToolsContainer();
+    this.toolsTitleEl = this.k.shapes.getToolsTitleElement();
+    if (!toolsContainer) return;
+    const controlIds = ["paint-controls", "outpaint-controls", "filter-controls", "text-controls"];
+    controlIds.forEach((idSuffix) => {
+      const control = document.getElementById(`${this.k.containerId}-${idSuffix}`);
+      if (control) toolsContainer.appendChild(control);
+    });
+  }
+  setToolsTitle(toolName) {
+    if (!this.toolsTitleEl) return;
+    this.toolsTitleEl.textContent = `Tool: ${toolName}`;
+  }
   async bindControls() {
+    this.mountOverlayTools();
     this.el.onclick = (e) => {
       if (e.target === this.el) this.el.classList.toggle("active");
     };
@@ -12034,6 +12133,15 @@ var Toolbar = class {
       document.getElementById(`${this.k.containerId}-button-settings`)?.classList.toggle("active");
       this.k.settings.showSettings();
     });
+    document.getElementById(`${this.k.containerId}-button-overlay-collapse`)?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const overlay = this.k.shapes.overlayEl;
+      const btn = document.getElementById(`${this.k.containerId}-button-overlay-collapse`);
+      const isCollapsed = overlay?.classList.toggle("overlay-collapsed");
+      if (btn) btn.textContent = isCollapsed ? "\uEB70" : "\uEB6E";
+      if (btn) btn.title = isCollapsed ? "Expand overlay" : "Collapse overlay";
+    });
     document.getElementById(`${this.k.containerId}-button-info`)?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -12070,6 +12178,7 @@ var Toolbar = class {
       this.resetButtons();
       this.btnPaint?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+      this.setToolsTitle("paint");
     });
     this.btnWand?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -12080,6 +12189,7 @@ var Toolbar = class {
       this.resetButtons();
       this.btnWand?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+      this.setToolsTitle("magic-wand");
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
     this.btnText?.addEventListener("click", async (e) => {
@@ -12092,6 +12202,7 @@ var Toolbar = class {
       this.btnText?.classList.add("active");
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
       document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add("active");
+      this.setToolsTitle("text");
     });
     document.getElementById(`${this.k.containerId}-brush-size`)?.addEventListener("input", async (e) => {
       e.preventDefault();
@@ -12141,12 +12252,14 @@ var Toolbar = class {
       if (this.btnOutpaint?.classList.contains("active")) {
         this.btnOutpaint?.classList.remove("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
+        this.setToolsTitle("none");
         this.k.outpaint.doOutpaint();
       } else {
         this.k.stopActions();
         this.resetButtons();
         this.btnOutpaint?.classList.add("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add("active");
+        this.setToolsTitle("outpaint");
       }
     });
     document.getElementById(`${this.k.containerId}-outpaint-expand`)?.addEventListener("input", async (e) => {
@@ -12172,6 +12285,7 @@ var Toolbar = class {
       this.resetButtons();
       this.btnFilters?.classList.add("active");
       document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add("active");
+      this.setToolsTitle("filters");
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener("input", async (e) => {
       e.preventDefault();
@@ -12229,7 +12343,7 @@ var Upload = class {
       const url = URL.createObjectURL(blob);
       const fallbackName = blob instanceof File ? blob.name : `pasted-${Date.now()}.png`;
       const dropImage = new Image();
-      dropImage.onload = () => {
+      dropImage.onload = async () => {
         if (!this.k.stage) return;
         const image = new lib_default.Image({
           image: dropImage,
@@ -12257,7 +12371,7 @@ var Upload = class {
         image.on("dragmove", () => this.k.resize.resizeStageToFit(image));
         image.on("click", () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        this.k.resize.resizeStageToFit(image);
+        await this.k.resize.resizeStageToFitNow(image);
         this.k.history.capture("Paste image");
         if (this.k.helpers.isEmpty()) this.k.onchange();
       };
@@ -12280,7 +12394,7 @@ var Upload = class {
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
       this.k.stages.syncActiveLayerRefs();
-      dropImage.onload = () => {
+      dropImage.onload = async () => {
         if (!this.k.stage) return;
         const image = new lib_default.Image({
           image: dropImage,
@@ -12308,7 +12422,7 @@ var Upload = class {
         image.on("dragmove", () => this.k.resize.resizeStageToFit(image));
         image.on("click", () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        this.k.resize.resizeStageToFit(image);
+        await this.k.resize.resizeStageToFitNow(image);
         this.k.history.capture("Upload image");
         if (shouldNotify) this.k.onchange();
       };
@@ -12379,6 +12493,7 @@ var Resize = class {
       } else {
         kanvasEl.style.marginLeft = "0px";
       }
+      this.k.wrapper.style.setProperty("--kanvas-canvas-height", `${this.k.stage.height() * this.scale}px`);
     }
     if (this.k.stage.height() > 128) {
       this.k.container.style.height = `${this.k.stage.height()}px`;
@@ -12446,6 +12561,10 @@ var Resize = class {
   async resizeStageToFit(el, force = false) {
     clearTimeout(this.debounceResize);
     this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
+  }
+  async resizeStageToFitNow(el, force = false) {
+    clearTimeout(this.debounceResize);
+    await this._resizeStage(el, force);
   }
   async resizeStage(width, height) {
     this.k.stage.width(width);
@@ -12589,6 +12708,7 @@ var Paint = class {
   wandCache = null;
   wandDragCanvas = null;
   wandDragCtx = null;
+  wandFillIndex = 0;
   lines = [];
   constructor(k) {
     this.k = k;
@@ -12659,7 +12779,7 @@ var Paint = class {
     const width = Math.round(sourceCanvas.width);
     const height = Math.round(sourceCanvas.height);
     const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+    const { data } = imageData;
     const pixels = width * height;
     const l = new Float32Array(pixels);
     const a = new Float32Array(pixels);
@@ -12780,7 +12900,8 @@ var Paint = class {
       opacity: 1,
       globalCompositeOperation: this.brushMode
     });
-    image.name(`wand-fill-${Date.now()}`);
+    this.wandFillIndex += 1;
+    image.name(`wand-fill-${this.wandFillIndex}`);
     image.on("click", () => this.k.selectNode(image));
     this.k.group.add(image);
     this.k.layer.batchDraw();
@@ -13148,6 +13269,8 @@ var Shapes = class _Shapes {
   overlayEl = null;
   resolutionEl = null;
   panelEl = null;
+  toolsEl = null;
+  toolsTitleEl = null;
   titleEl = null;
   listEl = null;
   boundStage = null;
@@ -13165,22 +13288,77 @@ var Shapes = class _Shapes {
     return this.k.selectedLayer === "image" ? this.k.imageGroup : this.k.maskGroup;
   }
   ensureOverlay() {
-    if (this.overlayEl && this.panelEl && this.titleEl && this.listEl) return;
+    if (this.overlayEl && this.panelEl && this.toolsEl && this.toolsTitleEl && this.titleEl && this.listEl) return;
     this.overlayEl = document.createElement("div");
     this.overlayEl.className = "kanvas-overlay";
     this.resolutionEl = document.createElement("div");
     this.resolutionEl.className = "kanvas-resolution";
     this.resolutionEl.innerHTML = `
-      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\u{F0A68}</span>
-      <label for="${this.k.containerId}-image-width"></label>
       <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
       <label for="${this.k.containerId}-image-height"></label>
       <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
+      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\u{F0A68}</span>
+      <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\uEB52</span>
+      <span class="kanvas-button" title="Collapse overlay" id="${this.k.containerId}-button-overlay-collapse">\uEB6E</span>
+      <label for="${this.k.containerId}-image-width"></label>
     `;
     this.overlayEl.appendChild(this.resolutionEl);
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let overlayStartLeft = 0;
+    let overlayStartTop = 0;
+    const resetOverlayPosition = () => {
+      this.overlayEl.style.left = "";
+      this.overlayEl.style.right = "0";
+      this.overlayEl.style.top = "calc(2.2 * var(--kanvas-size))";
+    };
+    this.resolutionEl.addEventListener("mousedown", (e) => {
+      const target = e.target;
+      if (target.tagName === "INPUT" || target.tagName === "SPAN") return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      const rect = this.overlayEl.getBoundingClientRect();
+      const parentRect = this.k.wrapper.getBoundingClientRect();
+      overlayStartLeft = rect.left - parentRect.left;
+      overlayStartTop = rect.top - parentRect.top;
+      this.overlayEl.style.right = "unset";
+      this.overlayEl.style.left = `${overlayStartLeft}px`;
+      this.overlayEl.style.top = `${overlayStartTop}px`;
+      this.resolutionEl.style.cursor = "grabbing";
+      e.preventDefault();
+    });
+    this.resolutionEl.addEventListener("dblclick", (e) => {
+      const target = e.target;
+      if (target.tagName === "INPUT" || target.tagName === "SPAN") return;
+      resetOverlayPosition();
+      e.preventDefault();
+    });
+    const onMouseMove = (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      this.overlayEl.style.left = `${overlayStartLeft + dx}px`;
+      this.overlayEl.style.top = `${overlayStartTop + dy}px`;
+    };
+    const onMouseUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+      this.resolutionEl.style.cursor = "";
+    };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
     this.panelEl = document.createElement("div");
     this.panelEl.className = "kanvas-shapes";
     this.overlayEl.appendChild(this.panelEl);
+    this.toolsEl = document.createElement("div");
+    this.toolsEl.className = "kanvas-tools";
+    this.toolsTitleEl = document.createElement("div");
+    this.toolsTitleEl.className = "kanvas-tools-title";
+    this.toolsTitleEl.textContent = "Tool: none";
+    this.toolsEl.appendChild(this.toolsTitleEl);
+    this.overlayEl.appendChild(this.toolsEl);
     this.titleEl = document.createElement("div");
     this.titleEl.className = "kanvas-shapes-titles";
     this.titleEl.addEventListener("click", (evt) => {
@@ -13194,6 +13372,18 @@ var Shapes = class _Shapes {
     this.listEl.className = "kanvas-shapes-list";
     this.panelEl.appendChild(this.listEl);
     this.k.wrapper.appendChild(this.overlayEl);
+  }
+  getToolsContainer() {
+    this.ensureOverlay();
+    return this.toolsEl;
+  }
+  getOverlayContainer() {
+    this.ensureOverlay();
+    return this.overlayEl;
+  }
+  getToolsTitleElement() {
+    this.ensureOverlay();
+    return this.toolsTitleEl;
   }
   disconnectListeners() {
     if (this.boundStage) this.boundStage.off(".shapes");
@@ -13372,8 +13562,14 @@ var Stages = class _Stages {
     const refresh = () => this.renderOverlay();
     this.boundImageGroup.on("add.stages-thumb remove.stages-thumb destroy.stages-thumb", refresh);
     this.boundMaskGroup.on("add.stages-thumb remove.stages-thumb destroy.stages-thumb", refresh);
-    this.boundImageGroup.on("xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb", schedule);
-    this.boundMaskGroup.on("xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb", schedule);
+    this.boundImageGroup.on(
+      "xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb",
+      schedule
+    );
+    this.boundMaskGroup.on(
+      "xChange.stages-thumb yChange.stages-thumb widthChange.stages-thumb heightChange.stages-thumb scaleXChange.stages-thumb scaleYChange.stages-thumb pointsChange.stages-thumb dragend.stages-thumb transformend.stages-thumb",
+      schedule
+    );
   }
   mountOverlay(parentEl) {
     if (this.panelEl && this.panelEl.parentElement === parentEl) return;
@@ -13395,7 +13591,7 @@ var Stages = class _Stages {
     this.btnAdd = document.createElement("span");
     this.btnAdd.className = "kanvas-button kanvas-stage-control";
     this.btnAdd.title = "Add stage";
-    this.btnAdd.textContent = "+";
+    this.btnAdd.textContent = "\uF0FE";
     this.btnAdd.addEventListener("click", (evt) => {
       evt.preventDefault();
       evt.stopPropagation();
@@ -13446,7 +13642,7 @@ var Stages = class _Stages {
         const remove = document.createElement("span");
         remove.className = "kanvas-button kanvas-stage-remove";
         remove.title = `Delete ${stage.label}`;
-        remove.textContent = "\xD7";
+        remove.textContent = "\uF2D3";
         remove.addEventListener("click", (evt) => {
           evt.preventDefault();
           evt.stopPropagation();
@@ -13459,7 +13655,7 @@ var Stages = class _Stages {
       resolution.className = "kanvas-stage-resolution";
       resolution.textContent = `${Math.round(stage.width)}x${Math.round(stage.height)}`;
       meta.appendChild(resolution);
-      item.appendChild(meta);
+      thumb.appendChild(meta);
       item.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();
@@ -13478,11 +13674,11 @@ var Stages = class _Stages {
     return this.list.find((stage) => stage.id === this.activeStageId) || null;
   }
   getStageList() {
-    return this.list.map((stage, index) => ({
+    return this.list.map((stage) => ({
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
-      removable: index > 0,
+      removable: true,
       width: stage.width,
       height: stage.height,
       thumbnail: this.getStageThumbnail(stage.id)
@@ -13579,25 +13775,25 @@ var Stages = class _Stages {
     return true;
   }
   deleteStage(id) {
-    if (this.list.length <= 1) return false;
-    if (this.list[0]?.id === id) {
-      this.k.helpers?.showMessage?.("First stage cannot be deleted");
-      return false;
-    }
     const index = this.list.findIndex((stage) => stage.id === id);
     if (index === -1) return false;
     const [removed] = this.list.splice(index, 1);
     removed.imageGroup.destroy();
     removed.maskGroup.destroy();
+    this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
+    if (this.list.length === 0) {
+      this.k.initialize(removed.width, removed.height);
+      return true;
+    }
     if (this.activeStageId === id) {
-      this.activeStageId = this.list[0].id;
+      const nextIndex = Math.min(index, this.list.length - 1);
+      this.activeStageId = this.list[nextIndex].id;
       this.switchStage(this.activeStageId);
     } else {
       this.k.stage.batchDraw();
       this.renderOverlay();
       this.k.shapes?.refresh();
     }
-    this.k.helpers?.showMessage?.(`Deleted stage: ${removed.label}`);
     this.k.history.capture("Delete stage");
     return true;
   }
@@ -13608,7 +13804,7 @@ var Stages = class _Stages {
     return this.list.length < this.maxStages;
   }
   canDeleteActiveStage() {
-    return this.list.length > 1 && this.list[0]?.id !== this.activeStageId;
+    return this.list.length >= 1;
   }
   resizeActiveStageLayers(width, height) {
     const active = this.getActiveStage();
@@ -13651,20 +13847,22 @@ var History = class _History {
       width: stage.width,
       height: stage.height,
       imageJSON: stage.imageGroup.toJSON(),
-      imageSources: this.serializeImageSources(stage.imageGroup),
+      imageSources: _History.serializeImageSources(stage.imageGroup),
       maskJSON: stage.maskGroup.toJSON(),
-      maskSources: this.serializeImageSources(stage.maskGroup)
+      maskSources: _History.serializeImageSources(stage.maskGroup)
     }));
     return {
       stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
+      actionLabel: "Edit",
       stages: stages2
     };
   }
-  capture(_label = "Edit") {
+  capture(label = "Edit") {
     if (this.replaying) return;
     const next = this.snapshotWorkspace();
+    next.actionLabel = label;
     if (!this.current) {
       this.current = next;
       this.updateToolbar();
@@ -13678,20 +13876,22 @@ var History = class _History {
   }
   undo() {
     if (!this.canUndo() || !this.current) return;
+    const actionLabel = this.current.actionLabel || "Edit";
     const previous = this.past.pop();
     this.future.push(this.current);
     this.current = previous;
     this.restoreWorkspace(previous);
-    this.k.helpers.showMessage("Undo");
+    this.k.helpers.showMessage(`Undo: ${actionLabel}`);
     this.updateToolbar();
   }
   redo() {
     if (!this.canRedo() || !this.current) return;
     const next = this.future.pop();
+    const actionLabel = next.actionLabel || "Edit";
     this.past.push(this.current);
     this.current = next;
     this.restoreWorkspace(next);
-    this.k.helpers.showMessage("Redo");
+    this.k.helpers.showMessage(`Redo: ${actionLabel}`);
     this.updateToolbar();
   }
   static createGroupFromJSON(json) {
@@ -13701,13 +13901,22 @@ var History = class _History {
     if (node instanceof lib_default.Shape) group.add(node);
     return group;
   }
-  serializeImageSources(group) {
+  static serializeImageSources(group) {
     const images = group.find("Image");
     return images.map((image) => {
+      const source = image.image();
       try {
         const canvas = image.toCanvas({ imageSmoothingEnabled: false });
         return canvas.toDataURL("image/png");
       } catch {
+        if (source instanceof HTMLCanvasElement) {
+          try {
+            return source.toDataURL("image/png");
+          } catch {
+            return "";
+          }
+        }
+        if (source instanceof HTMLImageElement && source.src) return source.src;
         return "";
       }
     });
@@ -13719,11 +13928,15 @@ var History = class _History {
       const src = sources[index];
       if (!src) return;
       const img = new Image();
+      img.crossOrigin = "Anonymous";
       img.onload = () => {
         node.image(img);
-        if (node.filters() && node.filters().length > 0) node.cache();
+        if ((node.filters()?.length || 0) > 0) node.cache();
         this.k.stage.batchDraw();
         this.k.stages.renderOverlay();
+      };
+      img.onerror = () => {
+        this.k.helpers.showMessage("History restore warning: unable to load one image source");
       };
       img.src = src;
     });
@@ -13824,7 +14037,7 @@ var Kanvas = class {
       }
     }
   }
-  initialize(defaultWidth = 1024, defaultHeight = 256) {
+  initialize(defaultWidth = 1024, defaultHeight = 310) {
     this.destroy();
     this.stages.reset();
     this.stage = new lib_default.Stage({
@@ -13886,6 +14099,7 @@ var Kanvas = class {
     this.helpers.bindEvents();
     this.helpers.bindStage();
     this.shapes.drawShapes();
+    this.settings.mountIntoOverlay();
     this.toolbar.bindControls();
     this.pan.bindPan();
     this.history.init();
@@ -13907,8 +14121,11 @@ var Kanvas = class {
     this.pan.moving = false;
     this.selected = node;
     const nodeType = this.selected.getClassName();
-    if (nodeType === "Image") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
-    else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${this.selected.points().length / 2}`);
+    if (nodeType === "Image") {
+      this.helpers.showMessage(
+        `Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`
+      );
+    } else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${this.selected.points().length / 2}`);
     else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
     this.layer.find("Transformer").forEach((t) => t.destroy());

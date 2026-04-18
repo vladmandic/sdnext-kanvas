@@ -33,7 +33,7 @@ export default class Upload {
       const url = URL.createObjectURL(blob);
       const fallbackName = blob instanceof File ? blob.name : `pasted-${Date.now()}.png`;
       const dropImage = new Image();
-      dropImage.onload = () => {
+      dropImage.onload = async () => {
         if (!this.k.stage) return;
         const image = new Konva.Image({
           image: dropImage,
@@ -61,7 +61,7 @@ export default class Upload {
         image.on('dragmove', () => this.k.resize.resizeStageToFit(image));
         image.on('click', () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        this.k.resize.resizeStageToFit(image);
+        await this.k.resize.resizeStageToFitNow(image);
         this.k.history.capture('Paste image');
         if (this.k.helpers.isEmpty()) this.k.onchange();
       };
@@ -85,7 +85,7 @@ export default class Upload {
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
       this.k.stages.syncActiveLayerRefs();
-      dropImage.onload = () => {
+      dropImage.onload = async () => {
         if (!this.k.stage) return;
         const image = new Konva.Image({
           image: dropImage,
@@ -113,7 +113,7 @@ export default class Upload {
         image.on('dragmove', () => this.k.resize.resizeStageToFit(image));
         image.on('click', () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        this.k.resize.resizeStageToFit(image);
+        await this.k.resize.resizeStageToFitNow(image);
         this.k.history.capture('Upload image');
         if (shouldNotify) this.k.onchange();
       };

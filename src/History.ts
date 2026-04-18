@@ -17,6 +17,7 @@ interface WorkspaceSnapshot {
   stageCounter: number;
   activeStageId: string;
   selectedLayer: 'image' | 'mask';
+  actionLabel: string;
   stages: StageSnapshot[];
 }
 
@@ -56,21 +57,23 @@ export default class History {
       width: stage.width,
       height: stage.height,
       imageJSON: stage.imageGroup.toJSON(),
-      imageSources: this.serializeImageSources(stage.imageGroup),
+      imageSources: History.serializeImageSources(stage.imageGroup),
       maskJSON: stage.maskGroup.toJSON(),
-      maskSources: this.serializeImageSources(stage.maskGroup),
+      maskSources: History.serializeImageSources(stage.maskGroup),
     }));
     return {
       stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
+      actionLabel: 'Edit',
       stages,
     };
   }
 
-  capture(_label = 'Edit') {
+  capture(label = 'Edit') {
     if (this.replaying) return;
     const next = this.snapshotWorkspace();
+    next.actionLabel = label;
     if (!this.current) {
       this.current = next;
       this.updateToolbar();
@@ -85,21 +88,23 @@ export default class History {
 
   undo() {
     if (!this.canUndo() || !this.current) return;
+    const actionLabel = this.current.actionLabel || 'Edit';
     const previous = this.past.pop() as WorkspaceSnapshot;
     this.future.push(this.current);
     this.current = previous;
     this.restoreWorkspace(previous);
-    this.k.helpers.showMessage('Undo');
+    this.k.helpers.showMessage(`Undo: ${actionLabel}`);
     this.updateToolbar();
   }
 
   redo() {
     if (!this.canRedo() || !this.current) return;
     const next = this.future.pop() as WorkspaceSnapshot;
+    const actionLabel = next.actionLabel || 'Edit';
     this.past.push(this.current);
     this.current = next;
     this.restoreWorkspace(next);
-    this.k.helpers.showMessage('Redo');
+    this.k.helpers.showMessage(`Redo: ${actionLabel}`);
     this.updateToolbar();
   }
 
@@ -111,13 +116,23 @@ export default class History {
     return group;
   }
 
-  serializeImageSources(group: Konva.Group) {
-    const images = group.find('Image') as Konva.Image[];
+  static serializeImageSources(group: Konva.Group) {
+    const images = group.find<Konva.Image>('Image');
     return images.map((image) => {
+      const source = image.image();
       try {
         const canvas = image.toCanvas({ imageSmoothingEnabled: false });
         return canvas.toDataURL('image/png');
       } catch {
+        // Fallback when raster export is unavailable (for example tainted sources).
+        if (source instanceof HTMLCanvasElement) {
+          try {
+            return source.toDataURL('image/png');
+          } catch {
+            return '';
+          }
+        }
+        if (source instanceof HTMLImageElement && source.src) return source.src;
         return '';
       }
     });
@@ -125,16 +140,20 @@ export default class History {
 
   restoreImageSources(group: Konva.Group, sources: string[]) {
     if (!sources || sources.length === 0) return;
-    const images = group.find('Image') as Konva.Image[];
+    const images = group.find<Konva.Image>('Image');
     images.forEach((node, index) => {
       const src = sources[index];
       if (!src) return;
       const img = new Image();
+      img.crossOrigin = 'Anonymous';
       img.onload = () => {
         node.image(img);
-        if (node.filters() && node.filters()!.length > 0) node.cache();
+        if ((node.filters()?.length || 0) > 0) node.cache();
         this.k.stage.batchDraw();
         this.k.stages.renderOverlay();
+      };
+      img.onerror = () => {
+        this.k.helpers.showMessage('History restore warning: unable to load one image source');
       };
       img.src = src;
     });

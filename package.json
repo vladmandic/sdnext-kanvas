@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "build --profile development",
-    "prod": "build --profile production"
+    "prod": "build --profile production",
+    "lint": "eslint"
   },
   "author": "Vladimir Mandic <mandic00@live.com>",
   "license": "Apache-2.0",

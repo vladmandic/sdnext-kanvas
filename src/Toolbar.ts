@@ -3,6 +3,7 @@ import type Kanvas from './Kanvas';
 export default class Toolbar {
   k: Kanvas;
   el: HTMLElement;
+  toolsTitleEl: HTMLElement | null = null;
   btnSelectImage: HTMLElement | null = null;
   btnSelectMask: HTMLElement | null = null;
   btnUpload: HTMLElement | null = null;
@@ -43,7 +44,7 @@ export default class Toolbar {
         </span>
 
         <span class="kanvas-separator"> | </span>
-        <span class="kanvas-button" title="Reset actions and refresh view" id="${this.k.containerId}-button-refresh">\udb86\uddfe</span>
+        <span class="kanvas-button" title="Switch to select mode" id="${this.k.containerId}-button-refresh">\uf124</span>
         <span class="kanvas-button" title="Move or resize currently selected image" id="${this.k.containerId}-button-resize">\udb81\ude55</span>
         <span class="kanvas-button" title="Crop currently selected image" id="${this.k.containerId}-button-crop">\udb80\udd9e</span>
         <span class="kanvas-button" title="Free Paint in currently selected layer" id="${this.k.containerId}-button-paint">\uf1fc</span>
@@ -53,7 +54,6 @@ export default class Toolbar {
         <span class="kanvas-button" title="Draw text" id="${this.k.containerId}-button-text">\udb80\ude84</span>
 
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
           <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
@@ -79,13 +79,11 @@ export default class Toolbar {
         </span>
 
         <span id="${this.k.containerId}-outpaint-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-outpaint-blur" class="kanvas-slider" min="0" max="1" step="0.01" value="0.35" title="Outpaint edge blur" />
           <input type="range" id="${this.k.containerId}-outpaint-expand" class="kanvas-slider" min="0" max="1" step="0.01" value="0.15" title="Outpaint edge expand" />
         </span>
 
         <span id="${this.k.containerId}-filter-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="range" id="${this.k.containerId}-filter-value" class="kanvas-slider" min="0" max="100" step="1" value="10" title="Filter value" />
           <select id="${this.k.containerId}-filter-name" class="kanvas-select" title="Active image filter">
             <option value="blur">blur</option>
@@ -102,7 +100,6 @@ export default class Toolbar {
         </span>
 
         <span id="${this.k.containerId}-text-controls" class="kanvas-section">
-          <span class="kanvas-separator"> | </span>
           <input type="text" id="${this.k.containerId}-text-font" class="kanvas-textbox" value="Calibri" title="Text font" />
           <input type="text" id="${this.k.containerId}-text-value" class="kanvas-textbox" placeholder="enter text" title="Text value" />
         </span>
@@ -113,8 +110,6 @@ export default class Toolbar {
         <span class="kanvas-button" title="Zoom out" id="${this.k.containerId}-button-zoomout">\uf532</span>
       </span>
 
-      <span class="kanvas-separator"> | </span>
-      <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\ueb52</span>
       <span class="kanvas-button" title="Information" id="${this.k.containerId}-button-info">\udb80\udefd</span>
     `;
   }
@@ -132,6 +127,7 @@ export default class Toolbar {
     document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-text-controls`)?.classList.remove('active');
     document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove('active');
+    this.setToolsTitle('none');
     this.k.imageLayer.batchDraw();
     this.k.maskLayer.batchDraw();
   }
@@ -149,7 +145,24 @@ export default class Toolbar {
     this.btnRedo?.classList.toggle('disabled', !canRedo);
   }
 
+  mountOverlayTools() {
+    const toolsContainer = this.k.shapes.getToolsContainer();
+    this.toolsTitleEl = this.k.shapes.getToolsTitleElement();
+    if (!toolsContainer) return;
+    const controlIds = ['paint-controls', 'outpaint-controls', 'filter-controls', 'text-controls'];
+    controlIds.forEach((idSuffix) => {
+      const control = document.getElementById(`${this.k.containerId}-${idSuffix}`);
+      if (control) toolsContainer.appendChild(control);
+    });
+  }
+
+  setToolsTitle(toolName: string) {
+    if (!this.toolsTitleEl) return;
+    this.toolsTitleEl.textContent = `Tool: ${toolName}`;
+  }
+
   async bindControls() {
+    this.mountOverlayTools();
     // toolbar
     this.el.onclick = (e) => {
       if (e.target === this.el) this.el.classList.toggle('active');
@@ -290,6 +303,15 @@ export default class Toolbar {
       document.getElementById(`${this.k.containerId}-button-settings`)?.classList.toggle('active');
       this.k.settings.showSettings();
     });
+    document.getElementById(`${this.k.containerId}-button-overlay-collapse`)?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const overlay = this.k.shapes.overlayEl;
+      const btn = document.getElementById(`${this.k.containerId}-button-overlay-collapse`);
+      const isCollapsed = overlay?.classList.toggle('overlay-collapsed');
+      if (btn) btn.textContent = isCollapsed ? '\ueb70' : '\ueb6e';
+      if (btn) btn.title = isCollapsed ? 'Expand overlay' : 'Collapse overlay';
+    });
     document.getElementById(`${this.k.containerId}-button-info`)?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -330,6 +352,7 @@ export default class Toolbar {
       this.resetButtons();
       this.btnPaint?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+      this.setToolsTitle('paint');
     });
     this.btnWand?.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -340,6 +363,7 @@ export default class Toolbar {
       this.resetButtons();
       this.btnWand?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+      this.setToolsTitle('magic-wand');
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
     this.btnText?.addEventListener('click', async (e) => {
@@ -352,6 +376,7 @@ export default class Toolbar {
       this.btnText?.classList.add('active');
       document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
       document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add('active');
+      this.setToolsTitle('text');
     });
     document.getElementById(`${this.k.containerId}-brush-size`)?.addEventListener('input', async (e) => {
       e.preventDefault();
@@ -403,12 +428,14 @@ export default class Toolbar {
       if (this.btnOutpaint?.classList.contains('active')) {
         this.btnOutpaint?.classList.remove('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove('active');
+        this.setToolsTitle('none');
         this.k.outpaint.doOutpaint();
       } else {
         this.k.stopActions();
         this.resetButtons();
         this.btnOutpaint?.classList.add('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add('active');
+        this.setToolsTitle('outpaint');
       }
     });
     document.getElementById(`${this.k.containerId}-outpaint-expand`)?.addEventListener('input', async (e) => {
@@ -436,6 +463,7 @@ export default class Toolbar {
       this.resetButtons();
       this.btnFilters?.classList.add('active');
       document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add('active');
+      this.setToolsTitle('filters');
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener('input', async (e) => {
       e.preventDefault();
