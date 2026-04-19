@@ -12460,6 +12460,7 @@ var Resize = class {
   debounceResize = 0;
   historyResizeDebounce = 0;
   scale = 1;
+  lastZoomPercent = -1;
   constructor(k) {
     this.k = k;
   }
@@ -12468,6 +12469,9 @@ var Resize = class {
   }
   async _fitStage(el) {
     if (!el || el.clientWidth === 0 || el.clientHeight === 0) return;
+    const stageWidth = this.k.stage.width();
+    const stageHeight = this.k.stage.height();
+    if (stageWidth <= 0 || stageHeight <= 0) return;
     if (this.k.helpers.isEmpty()) {
       this.k.wrapper.style.overflow = "hidden";
     }
@@ -12477,30 +12481,36 @@ var Resize = class {
     } else {
       this.k.wrapper.style.overflow = "hidden";
       this.scale = Math.min(
-        (el.clientWidth - 0) / this.k.stage.width(),
-        (el.clientHeight - 32) / this.k.stage.height()
+        (el.clientWidth - 0) / stageWidth,
+        (el.clientHeight - 32) / stageHeight
         // adjust for toolbar
       );
     }
+    const scaledWidth = `${stageWidth * this.scale}px`;
+    const scaledHeight = `${stageHeight * this.scale}px`;
     el.querySelectorAll("canvas").forEach((canvas) => {
-      canvas.style.width = `${this.k.stage.width() * this.scale}px`;
-      canvas.style.height = `${this.k.stage.height() * this.scale}px`;
+      if (canvas.style.width !== scaledWidth) canvas.style.width = scaledWidth;
+      if (canvas.style.height !== scaledHeight) canvas.style.height = scaledHeight;
     });
     const kanvasEl = document.getElementById(`${this.k.containerId}-kanvas`);
     if (kanvasEl && !this.k.helpers.isEmpty()) {
-      if (el.clientWidth > this.k.stage.width() * this.scale) {
-        kanvasEl.style.marginLeft = `${(el.clientWidth - this.k.stage.width() * this.scale) / 2}px`;
+      if (el.clientWidth > stageWidth * this.scale) {
+        kanvasEl.style.marginLeft = `${(el.clientWidth - stageWidth * this.scale) / 2}px`;
       } else {
         kanvasEl.style.marginLeft = "0px";
       }
-      this.k.wrapper.style.setProperty("--kanvas-canvas-height", `${this.k.stage.height() * this.scale}px`);
+      this.k.wrapper.style.setProperty("--kanvas-canvas-height", `${stageHeight * this.scale}px`);
     }
-    if (this.k.stage.height() > 128) {
-      this.k.container.style.height = `${this.k.stage.height()}px`;
+    if (stageHeight > 128) {
+      this.k.container.style.height = `${stageHeight}px`;
     } else {
       this.k.container.style.height = "unset";
     }
-    if (!this.k.helpers.isEmpty()) this.k.helpers.showMessage(`Zoom: ${Math.round(this.scale * 100)}%`);
+    const zoomPercent = Math.round(this.scale * 100);
+    if (!this.k.helpers.isEmpty() && zoomPercent !== this.lastZoomPercent) {
+      this.lastZoomPercent = zoomPercent;
+      this.k.helpers.showMessage(`Zoom: ${zoomPercent}%`);
+    }
   }
   async fitStage(el = this.k.wrapper) {
     clearTimeout(this.debounceFit);
@@ -14027,9 +14037,14 @@ var Kanvas = class {
   stages;
   footer;
   history;
+  resizeObserver = null;
   // callbacks
   onchange;
   destroy() {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.stage) {
       try {
         this.stage.destroy();
@@ -14105,8 +14120,9 @@ var Kanvas = class {
     this.history.init();
     this.wrapper.focus();
     this.wrapper.addEventListener("paste", (evt) => this.upload.pasteImage(evt));
-    const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
-    resizeObserver.observe(this.wrapper);
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = new ResizeObserver(() => this.resize.fitStage());
+    this.resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
   }
   async selectRegister() {

@@ -49,11 +49,16 @@ export default class Kanvas {
   stages: Stages;
   footer: Footer;
   history: History;
+  resizeObserver: ResizeObserver | null = null;
 
   // callbacks
   onchange: () => void;
 
   destroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.stage) {
       try { this.stage.destroy(); } catch { /* ignore */ }
     }
@@ -142,8 +147,9 @@ export default class Kanvas {
     this.wrapper.addEventListener('paste', (evt) => this.upload.pasteImage(evt));
 
     // initial size
-    const resizeObserver = new ResizeObserver(() => this.resize.fitStage());
-    resizeObserver.observe(this.wrapper);
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = new ResizeObserver(() => this.resize.fitStage());
+    this.resizeObserver.observe(this.wrapper);
     this.resize.fitStage();
   }
 
