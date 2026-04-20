@@ -11902,7 +11902,7 @@ var Toolbar = class {
 
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
-          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
+          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="45" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
           <select id="${this.k.containerId}-brush-mode" class="kanvas-select" title="Brush mode">
             <option value="source-over">source-over</option>
@@ -12106,6 +12106,41 @@ var Toolbar = class {
     };
     document.getElementById(`${this.k.containerId}-image-width`)?.addEventListener("input", async (e) => resizeFromInputs(e));
     document.getElementById(`${this.k.containerId}-image-height`)?.addEventListener("input", async (e) => resizeFromInputs(e));
+    document.getElementById(`${this.k.containerId}-button-size`)?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const widthInput = document.getElementById(`${this.k.containerId}-image-width`);
+      const heightInput = document.getElementById(`${this.k.containerId}-image-height`);
+      const width = parseInt(widthInput.value, 10);
+      const height = parseInt(heightInput.value, 10);
+      if (this.k.helpers.isEmpty()) {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "rgba(0, 0, 0, 0)";
+          ctx.fillRect(0, 0, width, height);
+        }
+        const image = new lib_default.Image({
+          image: canvas,
+          x: 0,
+          y: 0,
+          draggable: false,
+          opacity: this.k.opacity
+        });
+        image.name(`canvas-${width}x${height}`);
+        this.k.controls.style.display = "contents";
+        this.k.helpers.showMessage(`Created empty image: ${width} x ${height}`);
+        this.k.group.add(image);
+        image.on("click", () => this.k.selectNode(image));
+        this.k.resize.resizeStage(width, height);
+        this.k.stage.batchDraw();
+        this.k.history.capture("Create empty image");
+      } else {
+        this.k.resize.resizeStage(width, height);
+      }
+    });
     document.getElementById(`${this.k.containerId}-button-zoomin`)?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -12138,7 +12173,8 @@ var Toolbar = class {
       e.stopPropagation();
       const overlay = this.k.shapes.overlayEl;
       const btn = document.getElementById(`${this.k.containerId}-button-overlay-collapse`);
-      const isCollapsed = overlay?.classList.toggle("overlay-collapsed");
+      this.k.shapes.overlayCollapsed = !this.k.shapes.overlayCollapsed;
+      const isCollapsed = overlay?.classList.toggle("overlay-collapsed", this.k.shapes.overlayCollapsed);
       if (btn) btn.textContent = isCollapsed ? "\uEB70" : "\uEB6E";
       if (btn) btn.title = isCollapsed ? "Expand overlay" : "Collapse overlay";
     });
@@ -12172,37 +12208,59 @@ var Toolbar = class {
     this.btnPaint?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = "paint";
-      this.k.helpers.showMessage("Image mode=paint");
-      this.k.paint.startPaint();
-      this.resetButtons();
-      this.btnPaint?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
-      this.setToolsTitle("paint");
+      if (this.btnPaint?.classList.contains("active")) {
+        this.btnPaint?.classList.remove("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove("active");
+        this.setToolsTitle("none");
+        this.k.imageMode = "none";
+      } else {
+        this.k.imageMode = "paint";
+        this.k.helpers.showMessage("Image mode=paint");
+        this.k.paint.startPaint();
+        this.resetButtons();
+        this.btnPaint?.classList.add("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+        this.setToolsTitle("paint");
+      }
     });
     this.btnWand?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = "wand";
-      this.k.helpers.showMessage("Image mode=wand");
-      this.k.paint.startWand();
-      this.resetButtons();
-      this.btnWand?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
-      this.setToolsTitle("magic-wand");
+      if (this.btnWand?.classList.contains("active")) {
+        this.btnWand?.classList.remove("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove("active");
+        this.setToolsTitle("none");
+        this.k.imageMode = "none";
+      } else {
+        this.k.imageMode = "wand";
+        this.k.helpers.showMessage("Image mode=wand");
+        this.k.paint.startWand();
+        this.resetButtons();
+        this.btnWand?.classList.add("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+        this.setToolsTitle("magic-wand");
+      }
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
     this.btnText?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = "text";
-      this.k.helpers.showMessage("Image mode=text");
-      this.k.paint.startText();
-      this.resetButtons();
-      this.btnText?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add("active");
-      this.setToolsTitle("text");
+      if (this.btnText?.classList.contains("active")) {
+        this.btnText?.classList.remove("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove("active");
+        document.getElementById(`${this.k.containerId}-text-controls`)?.classList.remove("active");
+        this.setToolsTitle("none");
+        this.k.imageMode = "none";
+      } else {
+        this.k.imageMode = "text";
+        this.k.helpers.showMessage("Image mode=text");
+        this.k.paint.startText();
+        this.resetButtons();
+        this.btnText?.classList.add("active");
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add("active");
+        document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add("active");
+        this.setToolsTitle("text");
+      }
     });
     document.getElementById(`${this.k.containerId}-brush-size`)?.addEventListener("input", async (e) => {
       e.preventDefault();
@@ -12248,13 +12306,13 @@ var Toolbar = class {
     this.btnOutpaint?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = "outpaint";
       if (this.btnOutpaint?.classList.contains("active")) {
         this.btnOutpaint?.classList.remove("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
         this.setToolsTitle("none");
-        this.k.outpaint.doOutpaint();
+        this.k.imageMode = "none";
       } else {
+        this.k.imageMode = "outpaint";
         this.k.stopActions();
         this.resetButtons();
         this.btnOutpaint?.classList.add("active");
@@ -12278,14 +12336,20 @@ var Toolbar = class {
     this.btnFilters?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = "filters";
-      this.k.helpers.showMessage("Image mode=filters");
-      this.k.stopActions();
-      if (this.btnFilters?.classList.contains("active")) this.k.filter.applyFilter();
-      this.resetButtons();
-      this.btnFilters?.classList.add("active");
-      document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add("active");
-      this.setToolsTitle("filters");
+      if (this.btnFilters?.classList.contains("active")) {
+        this.btnFilters?.classList.remove("active");
+        document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.remove("active");
+        this.setToolsTitle("none");
+        this.k.imageMode = "none";
+      } else {
+        this.k.imageMode = "filters";
+        this.k.helpers.showMessage("Image mode=filters");
+        this.k.stopActions();
+        this.resetButtons();
+        this.btnFilters?.classList.add("active");
+        document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add("active");
+        this.setToolsTitle("filters");
+      }
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener("input", async (e) => {
       e.preventDefault();
@@ -12709,7 +12773,7 @@ var Paint = class {
   textValue = "Hello World";
   isPainting = false;
   isWanding = false;
-  wandTolerance = 18;
+  wandTolerance = 45;
   wandSampleMerged = false;
   wandThrottleMs = 50;
   wandFeatherPx = 1;
@@ -12727,6 +12791,7 @@ var Paint = class {
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
+    this.k.container.style.cursor = "crosshair";
     this.k.stage.off(".paint");
     this.k.stage.on("mousedown.paint touchstart.paint", () => {
       if (this.k.imageMode !== "paint") {
@@ -12919,6 +12984,7 @@ var Paint = class {
   }
   startWand() {
     this.k.stopActions();
+    this.k.container.style.cursor = "crosshair";
     this.k.stage.off(".wand");
     this.k.stage.on("mousedown.wand touchstart.wand", () => {
       if (this.k.imageMode !== "wand") {
@@ -12949,6 +13015,7 @@ var Paint = class {
   stopPaint() {
     this.isPainting = false;
     this.isWanding = false;
+    this.k.container.style.cursor = "default";
     this.k.stage.off(".paint");
     this.k.stage.off(".wand");
     this.k.stage.off(".text");
@@ -13288,6 +13355,7 @@ var Shapes = class _Shapes {
   boundMaskGroup = null;
   refreshRaf = 0;
   collapsed = false;
+  overlayCollapsed = true;
   constructor(k) {
     this.k = k;
   }
@@ -13307,7 +13375,7 @@ var Shapes = class _Shapes {
       <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
       <label for="${this.k.containerId}-image-height"></label>
       <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
-      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\u{F0A68}</span>
+      <span class="kanvas-button" title="Create stage" id="${this.k.containerId}-button-size">\u{F0A68}</span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings">\uEB52</span>
       <span class="kanvas-button" title="Collapse overlay" id="${this.k.containerId}-button-overlay-collapse">\uEB6E</span>
       <label for="${this.k.containerId}-image-width"></label>
@@ -13381,6 +13449,7 @@ var Shapes = class _Shapes {
     this.listEl = document.createElement("div");
     this.listEl.className = "kanvas-shapes-list";
     this.panelEl.appendChild(this.listEl);
+    this.overlayEl.classList.toggle("overlay-collapsed", this.overlayCollapsed);
     this.k.wrapper.appendChild(this.overlayEl);
   }
   getToolsContainer() {
@@ -13450,6 +13519,14 @@ var Shapes = class _Shapes {
     this.titleEl.textContent = `Layer ${this.k.selectedLayer}: ${nodes.length} shapes`;
     this.overlayEl.classList.toggle("active", nodes.length > 0);
     this.overlayEl.classList.toggle("collapsed", this.collapsed);
+    if (nodes.length > 0) {
+      this.overlayCollapsed = false;
+      this.overlayEl.classList.remove("overlay-collapsed");
+    }
+    const sizeBtn = document.getElementById(`${this.k.containerId}-button-size`);
+    if (sizeBtn) {
+      sizeBtn.title = this.k.helpers.isEmpty() ? "Create stage" : "Change stage resolution";
+    }
     this.listEl.textContent = "";
     if (nodes.length === 0) {
       const emptyEl = document.createElement("div");

@@ -15,6 +15,7 @@ export default class Shapes {
   boundMaskGroup: Konva.Group | null = null;
   refreshRaf = 0;
   collapsed = false;
+  overlayCollapsed = true;
 
   constructor(k: Kanvas) {
     this.k = k;
@@ -39,7 +40,7 @@ export default class Shapes {
       <input type="number" id="${this.k.containerId}-image-width" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage width" />
       <label for="${this.k.containerId}-image-height"></label>
       <input type="number" id="${this.k.containerId}-image-height" class="kanvas-sizebox" min="256" max="8192" value="1024" title="Stage height" />
-      <span class="kanvas-button" title="Change stage width and height" id="${this.k.containerId}-button-size">\udb82\ude68</span>
+      <span class="kanvas-button" title="Create stage" id="${this.k.containerId}-button-size">\udb82\ude68</span>
       <span class="kanvas-button" title="Settings" id="${this.k.containerId}-button-settings"></span>
       <span class="kanvas-button" title="Collapse overlay" id="${this.k.containerId}-button-overlay-collapse">\ueb6e</span>
       <label for="${this.k.containerId}-image-width"></label>
@@ -126,6 +127,9 @@ export default class Shapes {
     this.listEl.className = 'kanvas-shapes-list';
     this.panelEl.appendChild(this.listEl);
 
+    // Start with overlay collapsed
+    this.overlayEl.classList.toggle('overlay-collapsed', this.overlayCollapsed);
+
     this.k.wrapper.appendChild(this.overlayEl);
   }
 
@@ -205,6 +209,16 @@ export default class Shapes {
     this.titleEl.textContent = `Layer ${this.k.selectedLayer}: ${nodes.length} shapes`;
     this.overlayEl.classList.toggle('active', nodes.length > 0);
     this.overlayEl.classList.toggle('collapsed', this.collapsed);
+    // Expand overlay when stage has content
+    if (nodes.length > 0) {
+      this.overlayCollapsed = false;
+      this.overlayEl.classList.remove('overlay-collapsed');
+    }
+    // Update button-size title based on stage content
+    const sizeBtn = document.getElementById(`${this.k.containerId}-button-size`);
+    if (sizeBtn) {
+      sizeBtn.title = this.k.helpers.isEmpty() ? 'Create stage' : 'Change stage resolution';
+    }
     this.listEl.textContent = '';
 
     if (nodes.length === 0) {

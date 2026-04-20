@@ -1,3 +1,4 @@
+import Konva from 'konva';
 import type Kanvas from './Kanvas';
 
 export default class Toolbar {
@@ -55,7 +56,7 @@ export default class Toolbar {
 
         <span id="${this.k.containerId}-paint-controls" class="kanvas-section">
           <input type="range" id="${this.k.containerId}-brush-size" class="kanvas-slider" min="1" max="100" step="1" value="20" title="Brush size" />
-          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="18" title="Magic wand tolerance" />
+          <input type="range" id="${this.k.containerId}-wand-tolerance" class="kanvas-slider" min="0" max="100" step="1" value="45" title="Magic wand tolerance" />
           <input type="range" id="${this.k.containerId}-brush-opacity" class="kanvas-slider" min="0" max="1" step="0.01" value="1" title="Brush opacity" />
           <select id="${this.k.containerId}-brush-mode" class="kanvas-select" title="Brush mode">
             <option value="source-over">source-over</option>
@@ -273,6 +274,46 @@ export default class Toolbar {
     document.getElementById(`${this.k.containerId}-image-width`)?.addEventListener('input', async (e) => resizeFromInputs(e));
     document.getElementById(`${this.k.containerId}-image-height`)?.addEventListener('input', async (e) => resizeFromInputs(e));
 
+    // handle button-size: create empty image if stage is empty
+    document.getElementById(`${this.k.containerId}-button-size`)?.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const widthInput = document.getElementById(`${this.k.containerId}-image-width`) as HTMLInputElement;
+      const heightInput = document.getElementById(`${this.k.containerId}-image-height`) as HTMLInputElement;
+      const width = parseInt((widthInput).value, 10);
+      const height = parseInt((heightInput).value, 10);
+
+      if (this.k.helpers.isEmpty()) {
+        // Create transparent canvas image with specified dimensions
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0)';
+          ctx.fillRect(0, 0, width, height);
+        }
+        const image = new Konva.Image({
+          image: canvas,
+          x: 0,
+          y: 0,
+          draggable: false,
+          opacity: this.k.opacity,
+        });
+        image.name(`canvas-${width}x${height}`);
+        this.k.controls.style.display = 'contents';
+        this.k.helpers.showMessage(`Created empty image: ${width} x ${height}`);
+        this.k.group.add(image);
+        image.on('click', () => this.k.selectNode(image));
+        this.k.resize.resizeStage(width, height);
+        this.k.stage.batchDraw();
+        this.k.history.capture('Create empty image');
+      } else {
+        // Stage is not empty, just resize
+        this.k.resize.resizeStage(width, height);
+      }
+    });
+
     // group: zoomin,zoomout
     document.getElementById(`${this.k.containerId}-button-zoomin`)?.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -308,7 +349,8 @@ export default class Toolbar {
       e.stopPropagation();
       const overlay = this.k.shapes.overlayEl;
       const btn = document.getElementById(`${this.k.containerId}-button-overlay-collapse`);
-      const isCollapsed = overlay?.classList.toggle('overlay-collapsed');
+      this.k.shapes.overlayCollapsed = !this.k.shapes.overlayCollapsed;
+      const isCollapsed = overlay?.classList.toggle('overlay-collapsed', this.k.shapes.overlayCollapsed);
       if (btn) btn.textContent = isCollapsed ? '\ueb70' : '\ueb6e';
       if (btn) btn.title = isCollapsed ? 'Expand overlay' : 'Collapse overlay';
     });
@@ -346,37 +388,59 @@ export default class Toolbar {
     this.btnPaint?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = 'paint';
-      this.k.helpers.showMessage('Image mode=paint');
-      this.k.paint.startPaint();
-      this.resetButtons();
-      this.btnPaint?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
-      this.setToolsTitle('paint');
+      if (this.btnPaint?.classList.contains('active')) {
+        this.btnPaint?.classList.remove('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove('active');
+        this.setToolsTitle('none');
+        this.k.imageMode = 'none';
+      } else {
+        this.k.imageMode = 'paint';
+        this.k.helpers.showMessage('Image mode=paint');
+        this.k.paint.startPaint();
+        this.resetButtons();
+        this.btnPaint?.classList.add('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+        this.setToolsTitle('paint');
+      }
     });
     this.btnWand?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = 'wand';
-      this.k.helpers.showMessage('Image mode=wand');
-      this.k.paint.startWand();
-      this.resetButtons();
-      this.btnWand?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
-      this.setToolsTitle('magic-wand');
+      if (this.btnWand?.classList.contains('active')) {
+        this.btnWand?.classList.remove('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove('active');
+        this.setToolsTitle('none');
+        this.k.imageMode = 'none';
+      } else {
+        this.k.imageMode = 'wand';
+        this.k.helpers.showMessage('Image mode=wand');
+        this.k.paint.startWand();
+        this.resetButtons();
+        this.btnWand?.classList.add('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+        this.setToolsTitle('magic-wand');
+      }
     });
     this.btnText = document.getElementById(`${this.k.containerId}-button-text`);
     this.btnText?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = 'text';
-      this.k.helpers.showMessage('Image mode=text');
-      this.k.paint.startText();
-      this.resetButtons();
-      this.btnText?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add('active');
-      this.setToolsTitle('text');
+      if (this.btnText?.classList.contains('active')) {
+        this.btnText?.classList.remove('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.remove('active');
+        document.getElementById(`${this.k.containerId}-text-controls`)?.classList.remove('active');
+        this.setToolsTitle('none');
+        this.k.imageMode = 'none';
+      } else {
+        this.k.imageMode = 'text';
+        this.k.helpers.showMessage('Image mode=text');
+        this.k.paint.startText();
+        this.resetButtons();
+        this.btnText?.classList.add('active');
+        document.getElementById(`${this.k.containerId}-paint-controls`)?.classList.add('active');
+        document.getElementById(`${this.k.containerId}-text-controls`)?.classList.add('active');
+        this.setToolsTitle('text');
+      }
     });
     document.getElementById(`${this.k.containerId}-brush-size`)?.addEventListener('input', async (e) => {
       e.preventDefault();
@@ -424,13 +488,13 @@ export default class Toolbar {
     this.btnOutpaint?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = 'outpaint';
       if (this.btnOutpaint?.classList.contains('active')) {
         this.btnOutpaint?.classList.remove('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove('active');
         this.setToolsTitle('none');
-        this.k.outpaint.doOutpaint();
+        this.k.imageMode = 'none';
       } else {
+        this.k.imageMode = 'outpaint';
         this.k.stopActions();
         this.resetButtons();
         this.btnOutpaint?.classList.add('active');
@@ -456,14 +520,20 @@ export default class Toolbar {
     this.btnFilters?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.imageMode = 'filters';
-      this.k.helpers.showMessage('Image mode=filters');
-      this.k.stopActions();
-      if (this.btnFilters?.classList.contains('active')) this.k.filter.applyFilter();
-      this.resetButtons();
-      this.btnFilters?.classList.add('active');
-      document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add('active');
-      this.setToolsTitle('filters');
+      if (this.btnFilters?.classList.contains('active')) {
+        this.btnFilters?.classList.remove('active');
+        document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.remove('active');
+        this.setToolsTitle('none');
+        this.k.imageMode = 'none';
+      } else {
+        this.k.imageMode = 'filters';
+        this.k.helpers.showMessage('Image mode=filters');
+        this.k.stopActions();
+        this.resetButtons();
+        this.btnFilters?.classList.add('active');
+        document.getElementById(`${this.k.containerId}-filter-controls`)?.classList.add('active');
+        this.setToolsTitle('filters');
+      }
     });
     document.getElementById(`${this.k.containerId}-filter-value`)?.addEventListener('input', async (e) => {
       e.preventDefault();

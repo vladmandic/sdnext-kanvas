@@ -62,7 +62,7 @@ export default class Paint {
   textValue = 'Hello World';
   isPainting = false;
   isWanding = false;
-  wandTolerance = 18;
+  wandTolerance = 45;
   wandSampleMerged = false;
   readonly wandThrottleMs = 50;
   readonly wandFeatherPx = 1;
@@ -82,6 +82,7 @@ export default class Paint {
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
+    this.k.container.style.cursor = 'crosshair';
     this.k.stage.off('.paint');
     this.k.stage.on('mousedown.paint touchstart.paint', () => {
       if (this.k.imageMode !== 'paint') {
@@ -288,6 +289,7 @@ export default class Paint {
 
   startWand() {
     this.k.stopActions();
+    this.k.container.style.cursor = 'crosshair';
     this.k.stage.off('.wand');
     this.k.stage.on('mousedown.wand touchstart.wand', () => {
       if (this.k.imageMode !== 'wand') {
@@ -319,6 +321,7 @@ export default class Paint {
   stopPaint() {
     this.isPainting = false;
     this.isWanding = false;
+    this.k.container.style.cursor = 'default';
     this.k.stage.off('.paint');
     this.k.stage.off('.wand');
     this.k.stage.off('.text');
