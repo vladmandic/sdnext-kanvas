@@ -314,7 +314,7 @@ export default class Stages {
     this.k.resize?.updateSizeInputs?.();
     this.k.resize?.fitStage?.();
     this.k.layer.find('Transformer').forEach((t) => t.destroy());
-    this.k.selected = null as unknown as Konva.Node;
+    this.k.selected = null as Konva.Node;
     this.k.stage.batchDraw();
     this.k.shapes?.drawShapes();
     this.renderOverlay();
