@@ -23,7 +23,8 @@ with tools for upload, paste, paint, resize, crop, filters, text, outpaint, mask
 - [Server-side Masking](#server-side-masking)
 - [Disable Kanvas](#disable-kanvas)
 
-![Image](https://github.com/user-attachments/assets/54b25586-b611-4d70-a28f-ee3360944034)
+![Image](https://github.com/user-attachments/assets/6a857a2c-313a-4bf6-9f64-b2f2b716e2fe)
+
 
 > [!TIP]
 > For effective editing in Kanvas, collapse SD.Next panels so Kanvas has maximum workspace.

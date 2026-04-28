@@ -18,7 +18,7 @@ function loadFromURL(url) {
 }
 
 async function initKanvas() {
-  if (typeof log !== 'undefined') log(`Kanvas: element=${kanvasElement}`); // eslint-disable-line no-undef
+  // if (typeof log !== 'undefined') log(`Kanvas: element=${kanvasElement}`); // eslint-disable-line no-undef
   const t0 = performance.now();
   let el = document.getElementById(kanvasElement);
   while (!el) {

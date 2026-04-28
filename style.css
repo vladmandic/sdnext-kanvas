@@ -399,7 +399,6 @@
   transition: background-color 0.3s ease, color 0.2s ease, text-shadow 0.2s ease, filter 0.2s ease;
   margin-right: -0.25rem;
   letter-spacing: 0.125em;
-  text-shadow: 2px 2px 2px gray;
 }
 .kanvas-toolbar .kanvas-button:hover {
   color: hsl(var(--kanvas-color), 0%, 96%);
