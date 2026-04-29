@@ -13773,8 +13773,9 @@ var Stages = class _Stages {
       alignRight.style.marginLeft = "auto";
       header.appendChild(alignRight);
       const order = document.createElement("span");
-      order.className = "kanvas-stage-order";
+      order.className = "kanvas-button kanvas-stage-heading";
       order.textContent = `${stage.order}`;
+      order.title = `Stage order: ${stage.order} out of ${stages2.length}`;
       alignRight.appendChild(order);
       const remove = document.createElement("span");
       remove.className = "kanvas-button kanvas-stage-heading";
@@ -13810,11 +13811,7 @@ var Stages = class _Stages {
     return this.list.find((stage) => stage.id === this.activeStageId) || null;
   }
   getStageList() {
-    return this.list.slice().sort((a, b) => {
-      const orderA = a.order === 0 ? Infinity : a.order;
-      const orderB = b.order === 0 ? Infinity : b.order;
-      return orderA - orderB;
-    }).map((stage) => ({
+    return this.list.slice().sort((a, b) => a.order - b.order).map((stage) => ({
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
@@ -13827,15 +13824,39 @@ var Stages = class _Stages {
   updateStageOrder(activeStageId) {
     const activeStage = this.list.find((stage) => stage.id === activeStageId);
     if (!activeStage) return;
-    const otherStages = this.list.filter((stage) => stage.id !== activeStageId).sort((a, b) => {
-      const orderA = a.order === 0 ? Infinity : a.order;
-      const orderB = b.order === 0 ? Infinity : b.order;
-      return orderA - orderB;
-    });
+    const otherStages = this.list.filter((stage) => stage.id !== activeStageId).sort((a, b) => a.order - b.order);
     activeStage.order = 1;
     otherStages.forEach((stage, index) => {
       stage.order = index + 2;
     });
+  }
+  activateStage(id, updateOrder = true) {
+    const next = this.list.find((stage) => stage.id === id);
+    if (!next) return false;
+    this.activeStageId = id;
+    if (updateOrder) this.updateStageOrder(id);
+    this.list.forEach((stage) => {
+      const visible = stage.id === id;
+      stage.imageGroup.visible(visible);
+      stage.maskGroup.visible(visible);
+    });
+    this.syncActiveLayerRefs();
+    this.bindThumbnailListeners();
+    const nextWidth = Math.max(1, Math.round(next.width));
+    const nextHeight = Math.max(1, Math.round(next.height));
+    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.stage.size({ width: nextWidth, height: nextHeight });
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
+    this.k.resize?.updateSizeInputs?.();
+    this.k.resize?.fitStage?.();
+    this.k.layer.find("Transformer").forEach((t) => t.destroy());
+    this.k.selected = null;
+    this.k.stage.batchDraw();
+    this.k.shapes?.drawShapes();
+    this.renderOverlay();
+    if (updateOrder) this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
+    return true;
   }
   getStageThumbnail(stageId) {
     const stage = this.list.find((item) => item.id === stageId);
@@ -13889,7 +13910,7 @@ var Stages = class _Stages {
       maskGroup,
       width: this.k.stage.width(),
       height: this.k.stage.height(),
-      order: 0
+      order: Infinity
     };
     imageGroup.visible(false);
     maskGroup.visible(false);
@@ -13902,32 +13923,7 @@ var Stages = class _Stages {
     return id;
   }
   switchStage(id) {
-    const next = this.list.find((stage) => stage.id === id);
-    if (!next) return false;
-    this.activeStageId = id;
-    this.updateStageOrder(id);
-    this.list.forEach((stage) => {
-      const visible = stage.id === id;
-      stage.imageGroup.visible(visible);
-      stage.maskGroup.visible(visible);
-    });
-    this.syncActiveLayerRefs();
-    this.bindThumbnailListeners();
-    const nextWidth = Math.max(1, Math.round(next.width));
-    const nextHeight = Math.max(1, Math.round(next.height));
-    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.stage.size({ width: nextWidth, height: nextHeight });
-    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
-    this.k.resize?.updateSizeInputs?.();
-    this.k.resize?.fitStage?.();
-    this.k.layer.find("Transformer").forEach((t) => t.destroy());
-    this.k.selected = null;
-    this.k.stage.batchDraw();
-    this.k.shapes?.drawShapes();
-    this.renderOverlay();
-    this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
-    return true;
+    return this.activateStage(id, true);
   }
   deleteStage(id) {
     const index = this.list.findIndex((stage) => stage.id === id);
@@ -13945,6 +13941,9 @@ var Stages = class _Stages {
       this.activeStageId = this.list[nextIndex].id;
       this.switchStage(this.activeStageId);
     } else {
+      if (this.activeStageId && this.list.some((stage) => stage.id === this.activeStageId)) {
+        this.updateStageOrder(this.activeStageId);
+      }
       this.k.stage.batchDraw();
       this.renderOverlay();
       this.k.shapes?.refresh();
@@ -14129,7 +14128,7 @@ var History = class _History {
       this.k.stages.list = restored;
       this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || "";
-      if (targetStageId) this.k.stages.switchStage(targetStageId);
+      if (targetStageId) this.k.stages.activateStage(targetStageId, false);
       this.k.selectedLayer = snapshot.selectedLayer;
       if (this.k.selectedLayer === "mask") this.k.toolbar.btnSelectMask?.click();
       else this.k.toolbar.btnSelectImage?.click();
@@ -14349,59 +14348,33 @@ var Kanvas = class {
     };
     lib_default.Image.fromURL(url, onImage, onError);
   }
-  getImageData() {
-    const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
-    const ctxCanvas = imageCanvas.getContext("2d");
-    let imageData = ctxCanvas.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
-    const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
-    const ctxMask = maskCanvas.getContext("2d");
-    let maskData = ctxMask.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-    const imageEmpty = imageData.data.every((value) => value === 0);
-    const maskEmpty = maskData.data.every((value) => value === 0);
-    if (imageEmpty) {
-      imageData = null;
-      this.helpers.showMessage("No image");
-      return null;
-    }
-    if (maskEmpty) {
-      maskData = null;
-      this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height}`);
-      return {
-        kanvas: true,
-        image: imageData?.data,
-        imageWidth: imageData?.width,
-        imageHeight: imageData?.height
-      };
-    }
-    this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height} mask ${maskData.width} x ${maskData.height}`);
-    return {
-      kanvas: true,
-      image: imageData?.data,
-      imageWidth: imageData?.width,
-      imageHeight: imageData?.height,
-      mask: maskData?.data,
-      maskWidth: maskData?.width,
-      maskHeight: maskData?.height
-    };
-  }
-  getImage() {
+  getImage(stageOrder = 1) {
+    const sortedStages = this.stages.list.slice().sort((a, b) => a.order - b.order);
+    const stage = this.stages.list.find((item) => item.order === stageOrder) || sortedStages[0] || null;
+    if (!stage) return null;
     let imageData = null;
     let maskData = null;
-    if (this.imageGroup.hasChildren()) {
-      const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
+    const width = Math.max(1, Math.round(stage.width));
+    const height = Math.max(1, Math.round(stage.height));
+    const imageWasVisible = stage.imageGroup.visible();
+    if (!imageWasVisible) stage.imageGroup.visible(true);
+    if (stage.imageGroup.hasChildren()) {
+      const imageCanvas = stage.imageGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       imageData = imageCanvas.toDataURL("image/png");
     }
-    if (this.maskGroup.hasChildren()) {
-      const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
+    if (!imageWasVisible) stage.imageGroup.visible(false);
+    const maskWasVisible = stage.maskGroup.visible();
+    if (!maskWasVisible) stage.maskGroup.visible(true);
+    if (stage.maskGroup.hasChildren()) {
+      const maskCanvas = stage.maskGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       maskData = maskCanvas.toDataURL("image/png");
     }
-    if (!imageData) {
-      return null;
-    }
+    if (!maskWasVisible) stage.maskGroup.visible(false);
+    if (!imageData) return null;
     const result = { kanvas: true, image: null, mask: null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
-    this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     return result;
   }
 };

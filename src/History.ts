@@ -195,7 +195,7 @@ export default class History {
       this.k.stages.list = restored;
       this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || '';
-      if (targetStageId) this.k.stages.switchStage(targetStageId);
+      if (targetStageId) this.k.stages.activateStage(targetStageId, false);
 
       this.k.selectedLayer = snapshot.selectedLayer;
       if (this.k.selectedLayer === 'mask') this.k.toolbar.btnSelectMask?.click();
