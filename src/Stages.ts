@@ -8,6 +8,7 @@ export interface KanvasStage {
   maskGroup: Konva.Group;
   width: number;
   height: number;
+  order: number;
 }
 
 export default class Stages {
@@ -138,7 +139,7 @@ export default class Stages {
   renderOverlay() {
     if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
     const stages = this.getStageList();
-    const activeIndex = this.list.findIndex((stage) => stage.id === this.activeStageId);
+    const activeIndex = stages.findIndex((stage) => stage.id === this.activeStageId);
     this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
     this.btnAdd.classList.toggle('disabled', !this.canCreateStage());
     this.listEl.textContent = '';
@@ -172,18 +173,25 @@ export default class Stages {
       label.textContent = stage.label;
       header.appendChild(label);
 
-      if (stage.removable) {
-        const remove = document.createElement('span');
-        remove.className = 'kanvas-button kanvas-stage-remove';
-        remove.title = `Delete ${stage.label}`;
-        remove.textContent = '\uf2d3';
-        remove.addEventListener('click', (evt) => {
-          evt.preventDefault();
-          evt.stopPropagation();
-          this.deleteStage(stage.id);
-        });
-        header.appendChild(remove);
-      }
+      const alignRight = document.createElement('span');
+      alignRight.style.marginLeft = 'auto';
+      header.appendChild(alignRight);
+
+      const order = document.createElement('span');
+      order.className = 'kanvas-stage-order';
+      order.textContent = `${stage.order}`;
+      alignRight.appendChild(order);
+
+      const remove = document.createElement('span');
+      remove.className = 'kanvas-button kanvas-stage-heading';
+      remove.title = `Delete ${stage.label}`;
+      remove.textContent = '\uf2d3';
+      remove.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.deleteStage(stage.id);
+      });
+      alignRight.appendChild(remove);
 
       meta.appendChild(header);
 
@@ -215,15 +223,39 @@ export default class Stages {
   }
 
   getStageList() {
-    return this.list.map((stage) => ({
-      id: stage.id,
-      label: stage.label,
-      active: stage.id === this.activeStageId,
-      removable: true,
-      width: stage.width,
-      height: stage.height,
-      thumbnail: this.getStageThumbnail(stage.id),
-    }));
+    return this.list
+      .slice()
+      .sort((a, b) => {
+        const orderA = a.order === 0 ? Infinity : a.order;
+        const orderB = b.order === 0 ? Infinity : b.order;
+        return orderA - orderB;
+      })
+      .map((stage) => ({
+        id: stage.id,
+        label: stage.label,
+        active: stage.id === this.activeStageId,
+        width: stage.width,
+        height: stage.height,
+        order: stage.order,
+        thumbnail: this.getStageThumbnail(stage.id),
+      }));
+  }
+
+  updateStageOrder(activeStageId: string) {
+    const activeStage = this.list.find((stage) => stage.id === activeStageId);
+    if (!activeStage) return;
+    const otherStages = this.list
+      .filter((stage) => stage.id !== activeStageId)
+      .sort((a, b) => {
+        const orderA = a.order === 0 ? Infinity : a.order;
+        const orderB = b.order === 0 ? Infinity : b.order;
+        return orderA - orderB;
+      });
+
+    activeStage.order = 1;
+    otherStages.forEach((stage, index) => {
+      stage.order = index + 2;
+    });
   }
 
   getStageThumbnail(stageId: string) {
@@ -282,6 +314,7 @@ export default class Stages {
       maskGroup,
       width: this.k.stage.width(),
       height: this.k.stage.height(),
+      order: 0,
     };
     imageGroup.visible(false);
     maskGroup.visible(false);
@@ -298,6 +331,7 @@ export default class Stages {
     const next = this.list.find((stage) => stage.id === id);
     if (!next) return false;
     this.activeStageId = id;
+    this.updateStageOrder(id);
     this.list.forEach((stage) => {
       const visible = stage.id === id;
       stage.imageGroup.visible(visible);

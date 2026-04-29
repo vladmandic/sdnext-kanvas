@@ -7,6 +7,7 @@ interface StageSnapshot {
   label: string;
   width: number;
   height: number;
+  order: number;
   imageJSON: string;
   imageSources: string[];
   maskJSON: string;
@@ -56,6 +57,7 @@ export default class History {
       label: stage.label,
       width: stage.width,
       height: stage.height,
+      order: stage.order,
       imageJSON: stage.imageGroup.toJSON(),
       imageSources: History.serializeImageSources(stage.imageGroup),
       maskJSON: stage.maskGroup.toJSON(),
@@ -186,6 +188,7 @@ export default class History {
           maskGroup,
           width: stageSnap.width,
           height: stageSnap.height,
+          order: stageSnap.order,
         };
       });
 

@@ -313,12 +313,24 @@
   gap: 0.4em;
 }
 
-.kanvas-stage-remove {
-  padding: 0.05em 0.25em;
-  line-height: 1;
-  margin-right: 0;
-  letter-spacing: 0;
-  font-size: 1.4em;
+.kanvas-stage-order {
+  color: hsl(var(--kanvas-color), 0%, 12%);
+  background-color: hsl(var(--kanvas-color), 0%, 85%);
+  font-family: monospace;
+  line-height: 2em;
+  vertical-align: top;
+  padding: 0.1em 0.4em 0.125em 0.4em;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+.kanvas-stage-heading {
+  font-size: 1.5em;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.kanvas-stage-heading:hover {
+  color: hsl(var(--kanvas-color), 0%, 96%) !important;
 }
 
 .kanvas-stage-resolution {
