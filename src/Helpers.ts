@@ -7,9 +7,10 @@ export default class Helpers {
   }
 
   isEmpty() {
-    // const groups = this.k.imageGroup.getChildren().length + this.k.maskGroup.getChildren().length;
-    const images = this.k.stage.find('Image');
-    return images.length === 0;
+    const activeStage = this.k.stages.getActiveStage();
+    if (!activeStage) return true;
+    const images = activeStage.imageGroup.find('Image').length + activeStage.maskGroup.find('Image').length;
+    return images === 0;
   }
 
   async kanvasLog(message: string) { // eslint-disable-line class-methods-use-this

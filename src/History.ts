@@ -15,7 +15,6 @@ interface StageSnapshot {
 }
 
 interface WorkspaceSnapshot {
-  stageCounter: number;
   activeStageId: string;
   selectedLayer: 'image' | 'mask';
   actionLabel: string;
@@ -64,7 +63,6 @@ export default class History {
       maskSources: History.serializeImageSources(stage.maskGroup),
     }));
     return {
-      stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
       actionLabel: 'Edit',
@@ -193,7 +191,6 @@ export default class History {
       });
 
       this.k.stages.list = restored;
-      this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || '';
       if (targetStageId) this.k.stages.activateStage(targetStageId, false);
 

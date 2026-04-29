@@ -11846,8 +11846,10 @@ var Helpers = class {
     this.k = k;
   }
   isEmpty() {
-    const images = this.k.stage.find("Image");
-    return images.length === 0;
+    const activeStage = this.k.stages.getActiveStage();
+    if (!activeStage) return true;
+    const images = activeStage.imageGroup.find("Image").length + activeStage.maskGroup.find("Image").length;
+    return images === 0;
   }
   async kanvasLog(message) {
     if (typeof log !== "undefined") log("Kanvas:", message);
@@ -12426,6 +12428,18 @@ var Upload = class {
   constructor(k) {
     this.k = k;
   }
+  async setStageResolutionToImage(image) {
+    const width = Math.max(1, image.width());
+    const height = Math.max(1, image.height());
+    this.k.stage.size({ width, height });
+    this.k.stages.resizeActiveStageLayers(width, height);
+    this.k.stages.syncActiveLayerRefs();
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${width}px`;
+    this.k.resize.updateSizeInputs();
+    this.k.resize.fitStage();
+    this.k.stages.renderOverlay();
+    this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
+  }
   async pasteImage(e = null) {
     let items = [];
     if (e instanceof ClipboardEvent) {
@@ -12466,8 +12480,7 @@ var Upload = class {
         this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
@@ -12493,9 +12506,6 @@ var Upload = class {
     this.k.stopActions();
     this.k.toolbar.resetButtons();
     const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
-    const rect = this.k.stage.container().getBoundingClientRect();
-    const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
-    const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
     const shouldNotify = !this.k.imageGroup.hasChildren();
     for (const file of files) {
       if (!file.type.startsWith("image/")) continue;
@@ -12506,8 +12516,10 @@ var Upload = class {
         if (!this.k.stage) return;
         const image = new lib_default.Image({
           image: dropImage,
-          x: dropX,
-          y: dropY,
+          // x: dropX,
+          // y: dropY,
+          x: 0,
+          y: 0,
           draggable: false,
           opacity: this.k.opacity
         });
@@ -12517,8 +12529,7 @@ var Upload = class {
         this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
@@ -13632,7 +13643,6 @@ var Stages = class _Stages {
   k;
   list = [];
   activeStageId = "";
-  stageCounter = 1;
   maxStages = 10;
   panelEl = null;
   titleEl = null;
@@ -13658,7 +13668,6 @@ var Stages = class _Stages {
   reset() {
     this.list = [];
     this.activeStageId = "";
-    this.stageCounter = 1;
     this.collapsed = false;
     if (this.panelEl) this.panelEl.remove();
     this.panelEl = null;
@@ -13741,8 +13750,7 @@ var Stages = class _Stages {
   renderOverlay() {
     if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
     const stages2 = this.getStageList();
-    const activeIndex = stages2.findIndex((stage) => stage.id === this.activeStageId);
-    this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
+    this.titleLabelEl.textContent = `Stages: ${this.list.length}`;
     this.btnAdd.classList.toggle("disabled", !this.canCreateStage());
     this.listEl.textContent = "";
     stages2.forEach((stage) => {
@@ -13898,8 +13906,8 @@ var Stages = class _Stages {
       this.k.helpers?.showMessage?.(`Maximum stages reached: ${this.maxStages}`);
       return null;
     }
-    const id = `stage-${this.stageCounter}`;
     const stageNum = this.list.length + 1;
+    const id = `stage-${stageNum}`;
     const { imageGroup, maskGroup } = _Stages.createStageNodes();
     this.k.imageLayer.add(imageGroup);
     this.k.maskLayer.add(maskGroup);
@@ -13915,7 +13923,6 @@ var Stages = class _Stages {
     imageGroup.visible(false);
     maskGroup.visible(false);
     this.list.push(stageData);
-    this.stageCounter += 1;
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
@@ -14007,7 +14014,6 @@ var History = class _History {
       maskSources: _History.serializeImageSources(stage.maskGroup)
     }));
     return {
-      stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
       actionLabel: "Edit",
@@ -14126,7 +14132,6 @@ var History = class _History {
         };
       });
       this.k.stages.list = restored;
-      this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || "";
       if (targetStageId) this.k.stages.activateStage(targetStageId, false);
       this.k.selectedLayer = snapshot.selectedLayer;
@@ -14348,9 +14353,10 @@ var Kanvas = class {
     };
     lib_default.Image.fromURL(url, onImage, onError);
   }
-  getImage(stageOrder = 1) {
+  getImage(stageOrder = 1, imageOnly = false, fallback = true) {
     const sortedStages = this.stages.list.slice().sort((a, b) => a.order - b.order);
-    const stage = this.stages.list.find((item) => item.order === stageOrder) || sortedStages[0] || null;
+    let stage = this.stages.list.find((item) => item.order === stageOrder);
+    if (fallback && !stage && sortedStages.length > 0) stage = sortedStages[0] || null;
     if (!stage) return null;
     let imageData = null;
     let maskData = null;
@@ -14375,7 +14381,13 @@ var Kanvas = class {
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
     this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    if (imageOnly) return result.image;
     return result;
+  }
+  getAllImages() {
+    const results = [];
+    for (let i = 0; i < this.stages.maxStages; i++) results.push(this.getImage(i + 1, false, false));
+    return results;
   }
 };
 window.Kanvas = Kanvas;

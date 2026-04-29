@@ -237,11 +237,12 @@ export default class Kanvas {
     Konva.Image.fromURL(url, onImage, onError);
   }
 
-  getImage(stageOrder = 1) {
+  getImage(stageOrder = 1, imageOnly = false, fallback = true) {
     const sortedStages = this.stages.list
       .slice()
       .sort((a, b) => a.order - b.order);
-    const stage = this.stages.list.find((item) => item.order === stageOrder) || sortedStages[0] || null;
+    let stage = this.stages.list.find((item) => item.order === stageOrder);
+    if (fallback && !stage && (sortedStages.length > 0)) stage = sortedStages[0] || null;
     if (!stage) return null;
 
     let imageData: string | null = null;
@@ -270,7 +271,14 @@ export default class Kanvas {
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
     this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    if (imageOnly) return result.image;
     return result;
+  }
+
+  getAllImages() {
+    const results = [];
+    for (let i = 0; i < this.stages.maxStages; i++) results.push(this.getImage(i + 1, false, false));
+    return results;
   }
 }
 

@@ -15,7 +15,6 @@ export default class Stages {
   k: Kanvas;
   list: KanvasStage[] = [];
   activeStageId = '';
-  stageCounter = 1;
   readonly maxStages = 10;
   panelEl: HTMLDivElement | null = null;
   titleEl: HTMLDivElement | null = null;
@@ -44,7 +43,6 @@ export default class Stages {
   reset() {
     this.list = [];
     this.activeStageId = '';
-    this.stageCounter = 1;
     this.collapsed = false;
     if (this.panelEl) this.panelEl.remove();
     this.panelEl = null;
@@ -139,8 +137,7 @@ export default class Stages {
   renderOverlay() {
     if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
     const stages = this.getStageList();
-    const activeIndex = stages.findIndex((stage) => stage.id === this.activeStageId);
-    this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
+    this.titleLabelEl.textContent = `Stages: ${this.list.length}`;
     this.btnAdd.classList.toggle('disabled', !this.canCreateStage());
     this.listEl.textContent = '';
 
@@ -324,8 +321,8 @@ export default class Stages {
       this.k.helpers?.showMessage?.(`Maximum stages reached: ${this.maxStages}`);
       return null;
     }
-    const id = `stage-${this.stageCounter}`;
     const stageNum = this.list.length + 1;
+    const id = `stage-${stageNum}`;
     const { imageGroup, maskGroup } = Stages.createStageNodes();
     this.k.imageLayer.add(imageGroup);
     this.k.maskLayer.add(maskGroup);
@@ -341,7 +338,6 @@ export default class Stages {
     imageGroup.visible(false);
     maskGroup.visible(false);
     this.list.push(stageData);
-    this.stageCounter += 1;
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
