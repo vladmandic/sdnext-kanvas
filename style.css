@@ -47,11 +47,11 @@
   z-index: 1;
   border-radius: var(--kanvas-radius);
   transition: opacity 0.2s ease-in, background-color 0.2s ease-in;
+  background-color: unset;
 }
 
 .kanvas-toolbar.active {
   opacity: 1;
-  background-color: hsl(var(--kanvas-color), 0%, 10%);
 }
 
 .kanvas-toolbar span {
