@@ -13781,12 +13781,12 @@ var Stages = class _Stages {
       alignRight.style.marginLeft = "auto";
       header.appendChild(alignRight);
       const order = document.createElement("span");
-      order.className = "kanvas-button kanvas-stage-heading";
+      order.className = "kanvas-button kanvas-stage-order";
       order.textContent = `${stage.order}`;
       order.title = `Stage order: ${stage.order} out of ${stages2.length}`;
       alignRight.appendChild(order);
       const remove = document.createElement("span");
-      remove.className = "kanvas-button kanvas-stage-heading";
+      remove.className = "kanvas-button kanvas-stage-remove";
       remove.title = `Delete ${stage.label}`;
       remove.textContent = "\uF2D3";
       remove.addEventListener("click", (evt) => {
@@ -13802,6 +13802,7 @@ var Stages = class _Stages {
       meta.appendChild(resolution);
       thumb.appendChild(meta);
       item.addEventListener("click", (evt) => {
+        if (evt.target instanceof HTMLElement && evt.target.closest(".kanvas-stage-remove")) return;
         evt.preventDefault();
         evt.stopPropagation();
         if (!stage.active) this.switchStage(stage.id);
@@ -13819,7 +13820,7 @@ var Stages = class _Stages {
     return this.list.find((stage) => stage.id === this.activeStageId) || null;
   }
   getStageList() {
-    return this.list.slice().sort((a, b) => a.order - b.order).map((stage) => ({
+    return this.list.map((stage) => ({
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
@@ -13878,10 +13879,14 @@ var Stages = class _Stages {
       y: 0,
       width,
       height,
-      imageSmoothingEnabled: false
+      imageSmoothingEnabled: false,
+      pixelRatio: 0.25
     });
     if (!wasVisible) stage.imageGroup.visible(false);
-    return canvas.toDataURL("image/png");
+    return canvas.toDataURL({
+      mimeType: "image/jpeg",
+      quality: 0.6
+    });
   }
   syncActiveLayerRefs() {
     const active = this.getActiveStage();

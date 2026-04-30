@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "build --profile development",
     "prod": "build --profile production",
-    "lint": "eslint"
+    "lint": "eslint",
+    "ts": "tsc --noEmit"
   },
   "author": "Vladimir Mandic <mandic00@live.com>",
   "license": "Apache-2.0",

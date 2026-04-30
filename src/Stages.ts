@@ -175,13 +175,13 @@ export default class Stages {
       header.appendChild(alignRight);
 
       const order = document.createElement('span');
-      order.className = 'kanvas-button kanvas-stage-heading';
+      order.className = 'kanvas-button kanvas-stage-order';
       order.textContent = `${stage.order}`;
       order.title = `Stage order: ${stage.order} out of ${stages.length}`;
       alignRight.appendChild(order);
 
       const remove = document.createElement('span');
-      remove.className = 'kanvas-button kanvas-stage-heading';
+      remove.className = 'kanvas-button kanvas-stage-remove';
       remove.title = `Delete ${stage.label}`;
       remove.textContent = '\uf2d3';
       remove.addEventListener('click', (evt) => {
@@ -201,6 +201,7 @@ export default class Stages {
       thumb.appendChild(meta);
 
       item.addEventListener('click', (evt) => {
+        if (evt.target instanceof HTMLElement && evt.target.closest('.kanvas-stage-remove')) return;
         evt.preventDefault();
         evt.stopPropagation();
         if (!stage.active) this.switchStage(stage.id);
@@ -221,18 +222,15 @@ export default class Stages {
   }
 
   getStageList() {
-    return this.list
-      .slice()
-      .sort((a, b) => a.order - b.order)
-      .map((stage) => ({
-        id: stage.id,
-        label: stage.label,
-        active: stage.id === this.activeStageId,
-        width: stage.width,
-        height: stage.height,
-        order: stage.order,
-        thumbnail: this.getStageThumbnail(stage.id),
-      }));
+    return this.list.map((stage) => ({
+      id: stage.id,
+      label: stage.label,
+      active: stage.id === this.activeStageId,
+      width: stage.width,
+      height: stage.height,
+      order: stage.order,
+      thumbnail: this.getStageThumbnail(stage.id),
+    }));
   }
 
   updateStageOrder(activeStageId: string) {
@@ -283,17 +281,20 @@ export default class Stages {
     const width = Math.max(1, Math.round(stage.width));
     const height = Math.max(1, Math.round(stage.height));
     const wasVisible = stage.imageGroup.visible();
-    // Inactive stages are hidden in the main view; force visibility for offscreen thumbnail capture.
-    if (!wasVisible) stage.imageGroup.visible(true);
+    if (!wasVisible) stage.imageGroup.visible(true); // Inactive stages are hidden in the main view; force visibility for offscreen thumbnail capture.
     const canvas = stage.imageGroup.toCanvas({
       x: 0,
       y: 0,
       width,
       height,
       imageSmoothingEnabled: false,
+      pixelRatio: 0.25,
     });
     if (!wasVisible) stage.imageGroup.visible(false);
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL({
+      mimeType: 'image/jpeg',
+      quality: 0.6,
+    });
   }
 
   syncActiveLayerRefs() {

@@ -114,6 +114,7 @@
   border: none;
   text-align: right;
   width: 4.5em;
+  min-height: unset;
 }
 
 .kanvas-shapes {
@@ -126,7 +127,7 @@
   line-height: 1.25em;
   user-select: none;
   cursor: pointer;
-  padding-bottom: 0.2em;
+  padding: 0.5em 0 0.5em 0;
 }
 
 .kanvas-overlay.overlay-collapsed > :not(.kanvas-resolution) {
@@ -304,6 +305,11 @@
   min-width: 0;
   padding: 0.35em 0.4em;
   background: linear-gradient(180deg, hsla(var(--kanvas-color), 0%, 4%, 0.7) 0%, hsla(var(--kanvas-color), 0%, 4%, 0.08) 48%, hsla(var(--kanvas-color), 0%, 4%, 0.8) 100%);
+  pointer-events: none;
+}
+
+.kanvas-stage-meta * {
+  pointer-events: auto;
 }
 
 .kanvas-stage-header {
@@ -314,19 +320,28 @@
 }
 
 .kanvas-stage-order {
-  color: hsl(var(--kanvas-color), 0%, 12%);
+  color: hsl(var(--kanvas-color), 0%, 12%) !important;
   background-color: hsl(var(--kanvas-color), 0%, 85%);
   font-family: monospace;
-  line-height: 2em;
   vertical-align: top;
-  padding: 0.1em 0.4em 0.125em 0.4em;
-  border-radius: 2px;
-  font-weight: bold;
+  padding: 0.1em 0.4em 0.1em 0.4em !important;
+  border-radius: 2px !important;
+  font-weight: bolder;
+  position: absolute;
+  top: 0.35em;
+  right: 2.7em;
 }
 
-.kanvas-stage-heading {
-  font-size: 1.5em;
+.kanvas-stage-remove {
+  position: absolute;
+  top: 0.35em;
+  right: 0.35em;
+  font-size: 1.6em;
   background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  z-index: 2;
+  pointer-events: auto;
+  padding: 0 !important;
 }
 
 .kanvas-stage-heading:hover {
