@@ -12900,7 +12900,7 @@ var Paint = class {
   }
   buildWandCache() {
     this.k.stages.syncActiveLayerRefs();
-    const sourceCanvas = this.wandSampleMerged ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() }) : this.k.layer.toCanvas({ x: 0, y: 0, width: this.k.layer.width(), height: this.k.layer.height() });
+    const sourceCanvas = this.wandSampleMerged ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() }) : this.k.selectedLayer === "mask" ? this.k.imageLayer.toCanvas({ x: 0, y: 0, width: this.k.imageLayer.width(), height: this.k.imageLayer.height() }) : this.k.layer.toCanvas({ x: 0, y: 0, width: this.k.layer.width(), height: this.k.layer.height() });
     const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) {
       this.wandCache = null;
