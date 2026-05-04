@@ -138,6 +138,7 @@ export default class Paint {
 
   buildWandCache() {
     this.k.stages.syncActiveLayerRefs();
+    // eslint-disable-next-line no-nested-ternary
     const sourceCanvas = this.wandSampleMerged
       ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() })
       : (this.k.selectedLayer === 'mask'
