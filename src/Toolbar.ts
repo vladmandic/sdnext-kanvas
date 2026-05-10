@@ -493,6 +493,7 @@ export default class Toolbar {
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove('active');
         this.setToolsTitle('none');
         this.k.imageMode = 'none';
+        this.k.outpaint.doOutpaint(false);
       } else {
         this.k.imageMode = 'outpaint';
         this.k.stopActions();
@@ -500,6 +501,7 @@ export default class Toolbar {
         this.btnOutpaint?.classList.add('active');
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add('active');
         this.setToolsTitle('outpaint');
+        this.k.outpaint.doOutpaint(true);
       }
     });
     document.getElementById(`${this.k.containerId}-outpaint-expand`)?.addEventListener('input', async (e) => {
@@ -507,12 +509,14 @@ export default class Toolbar {
       e.stopPropagation();
       this.k.outpaint.outpaintExpand = parseFloat((e.target as HTMLInputElement).value);
       if (this.k.outpaint.outpaintExpand < 0 || this.k.outpaint.outpaintExpand > 1) this.k.outpaint.outpaintExpand = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
     document.getElementById(`${this.k.containerId}-outpaint-blur`)?.addEventListener('input', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.outpaint.outpaintBlur = parseFloat((e.target as HTMLInputElement).value);
       if (this.k.outpaint.outpaintBlur < 0 || this.k.outpaint.outpaintBlur > 1) this.k.outpaint.outpaintBlur = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
 
     // group: filters

@@ -12357,6 +12357,7 @@ var Toolbar = class {
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
         this.setToolsTitle("none");
         this.k.imageMode = "none";
+        this.k.outpaint.doOutpaint(false);
       } else {
         this.k.imageMode = "outpaint";
         this.k.stopActions();
@@ -12364,6 +12365,7 @@ var Toolbar = class {
         this.btnOutpaint?.classList.add("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add("active");
         this.setToolsTitle("outpaint");
+        this.k.outpaint.doOutpaint(true);
       }
     });
     document.getElementById(`${this.k.containerId}-outpaint-expand`)?.addEventListener("input", async (e) => {
@@ -12371,12 +12373,14 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.outpaint.outpaintExpand = parseFloat(e.target.value);
       if (this.k.outpaint.outpaintExpand < 0 || this.k.outpaint.outpaintExpand > 1) this.k.outpaint.outpaintExpand = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
     document.getElementById(`${this.k.containerId}-outpaint-blur`)?.addEventListener("input", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.outpaint.outpaintBlur = parseFloat(e.target.value);
       if (this.k.outpaint.outpaintBlur < 0 || this.k.outpaint.outpaintBlur > 1) this.k.outpaint.outpaintBlur = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
     this.btnFilters = document.getElementById(`${this.k.containerId}-button-filters`);
     this.btnFilters?.addEventListener("click", async (e) => {
@@ -13244,27 +13248,41 @@ var Outpaint = class {
     const canvas = this.k.imageLayer.toCanvas({ imageSmoothingEnabled: false });
     const filled = fillTransparent(canvas, 0);
     const konvaImg = new lib_default.Image({ x: 0, y: 0, image: filled });
-    konvaImg.name("fill");
+    konvaImg.name("fill-outpaint");
     konvaImg.cache({ imageSmoothingEnabled: false });
     this.k.imageGroup.add(konvaImg);
     this.k.imageGroup.cache();
     this.k.imageLayer.cache();
     this.k.imageLayer.batchDraw();
   }
-  remove() {
-    this.k.maskGroup.children.forEach(async (child) => {
-      if (child.name() === "mask-outpaint" || child.name() === "fill") await child.destroy();
+  removeOutpaint() {
+    const toRemove = [];
+    this.k.maskGroup.children.forEach((child) => {
+      if (child.name().endsWith("-outpaint")) toRemove.push(child);
     });
-    this.k.imageGroup.children.forEach(async (child) => {
-      if (child.name() === "mask-outpaint" || child.name() === "fill") await child.destroy();
+    this.k.imageGroup.children.forEach((child) => {
+      if (child.name().endsWith("-outpaint")) toRemove.push(child);
     });
-    this.k.imageGroup.cache();
-    this.k.layer.batchDraw();
+    toRemove.forEach((node) => node.destroy());
+    this.k.maskGroup.filters([]);
+    this.k.maskGroup.blurRadius(0);
+    this.k.maskGroup.clearCache();
+    this.k.imageGroup.clearCache();
+    this.k.imageLayer.clearCache();
+    this.k.maskLayer.clearCache();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
+    this.outpaintActive = false;
   }
-  doOutpaint() {
+  doOutpaint(action = true) {
+    if (!action) {
+      this.removeOutpaint();
+      return;
+    }
     this.k.imageMode = "outpaint";
     this.k.helpers.showMessage(`Image mode=outpaint blur=${this.outpaintBlur} expand=${this.outpaintExpand}`);
-    this.remove();
+    this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new lib_default.Rect({
       x: 0,
@@ -13291,6 +13309,7 @@ var Outpaint = class {
         globalCompositeOperation: "destination-out"
         // punch hole
       });
+      imageRect.name("image-outpaint");
       this.k.maskGroup.add(imageRect);
     }
     this.k.maskGroup.cache();
@@ -13298,7 +13317,9 @@ var Outpaint = class {
       this.k.maskGroup.filters([lib_default.Filters.Blur]);
       this.k.maskGroup.blurRadius(this.outpaintBlur * 100);
     }
-    this.k.layer.batchDraw();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
     this.outpaintActive = true;
     this.k.history.capture("Outpaint apply");
   }
