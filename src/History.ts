@@ -7,6 +7,7 @@ interface StageSnapshot {
   label: string;
   width: number;
   height: number;
+  order: number;
   imageJSON: string;
   imageSources: string[];
   maskJSON: string;
@@ -14,7 +15,6 @@ interface StageSnapshot {
 }
 
 interface WorkspaceSnapshot {
-  stageCounter: number;
   activeStageId: string;
   selectedLayer: 'image' | 'mask';
   actionLabel: string;
@@ -56,13 +56,13 @@ export default class History {
       label: stage.label,
       width: stage.width,
       height: stage.height,
+      order: stage.order,
       imageJSON: stage.imageGroup.toJSON(),
       imageSources: History.serializeImageSources(stage.imageGroup),
       maskJSON: stage.maskGroup.toJSON(),
       maskSources: History.serializeImageSources(stage.maskGroup),
     }));
     return {
-      stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
       actionLabel: 'Edit',
@@ -186,13 +186,13 @@ export default class History {
           maskGroup,
           width: stageSnap.width,
           height: stageSnap.height,
+          order: stageSnap.order,
         };
       });
 
       this.k.stages.list = restored;
-      this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || '';
-      if (targetStageId) this.k.stages.switchStage(targetStageId);
+      if (targetStageId) this.k.stages.activateStage(targetStageId, false);
 
       this.k.selectedLayer = snapshot.selectedLayer;
       if (this.k.selectedLayer === 'mask') this.k.toolbar.btnSelectMask?.click();

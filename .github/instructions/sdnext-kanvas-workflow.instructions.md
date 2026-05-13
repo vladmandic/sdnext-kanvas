@@ -1,8 +1,7 @@
 ---
 description: "Use when editing TypeScript source in this repository. Covers repo workflow, validation requirements, and code style expectations for sdnext-kanvas."
 name: "sdnext-kanvas TypeScript Workflow"
-applyTo:
-  - "src/**/*.ts"
+applyTo: "src/**/*.ts"
 ---
 # sdnext-kanvas TypeScript Workflow
 
@@ -12,6 +11,7 @@ applyTo:
 
 ## Required Validation After Each Edit
 
+- Do NOT run `tsc` directly.
 - Run `pnpm lint` after each code edit.
 - Run `pnpm prod` after each code edit.
 - If lint or build fails, fix those issues before making the next edit.

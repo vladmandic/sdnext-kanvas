@@ -17,7 +17,7 @@ export default class Outpaint {
     const canvas = this.k.imageLayer.toCanvas({ imageSmoothingEnabled: false });
     const filled = fillTransparent(canvas, 0);
     const konvaImg = new Konva.Image({ x: 0, y: 0, image: filled });
-    konvaImg.name('fill');
+    konvaImg.name('fill-outpaint');
     konvaImg.cache({ imageSmoothingEnabled: false });
     this.k.imageGroup.add(konvaImg);
     this.k.imageGroup.cache();
@@ -25,21 +25,35 @@ export default class Outpaint {
     this.k.imageLayer.batchDraw();
   }
 
-  remove() {
-    this.k.maskGroup.children.forEach(async (child) => {
-      if (child.name() === 'mask-outpaint' || child.name() === 'fill') await child.destroy();
+  removeOutpaint() {
+    const toRemove: Konva.Node[] = [];
+    this.k.maskGroup.children.forEach((child) => {
+      if (child.name().endsWith('-outpaint')) toRemove.push(child);
     });
-    this.k.imageGroup.children.forEach(async (child) => {
-      if (child.name() === 'mask-outpaint' || child.name() === 'fill') await child.destroy();
+    this.k.imageGroup.children.forEach((child) => {
+      if (child.name().endsWith('-outpaint')) toRemove.push(child);
     });
-    this.k.imageGroup.cache();
-    this.k.layer.batchDraw();
+    toRemove.forEach((node) => node.destroy());
+    this.k.maskGroup.filters([]);
+    this.k.maskGroup.blurRadius(0);
+    this.k.maskGroup.clearCache();
+    this.k.imageGroup.clearCache();
+    this.k.imageLayer.clearCache();
+    this.k.maskLayer.clearCache();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
+    this.outpaintActive = false;
   }
 
-  doOutpaint() {
+  doOutpaint(action = true) {
+    if (!action) {
+      this.removeOutpaint();
+      return;
+    }
     this.k.imageMode = 'outpaint';
     this.k.helpers.showMessage(`Image mode=outpaint blur=${this.outpaintBlur} expand=${this.outpaintExpand}`);
-    this.remove();
+    this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new Konva.Rect({
       x: 0,
@@ -65,6 +79,7 @@ export default class Outpaint {
         fill: 'black',
         globalCompositeOperation: 'destination-out', // punch hole
       });
+      imageRect.name('image-outpaint');
       this.k.maskGroup.add(imageRect);
     }
     this.k.maskGroup.cache();
@@ -72,7 +87,9 @@ export default class Outpaint {
       this.k.maskGroup.filters([Konva.Filters.Blur]);
       this.k.maskGroup.blurRadius(this.outpaintBlur * 100);
     }
-    this.k.layer.batchDraw();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
     this.outpaintActive = true;
     this.k.history.capture('Outpaint apply');
   }

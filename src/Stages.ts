@@ -8,13 +8,13 @@ export interface KanvasStage {
   maskGroup: Konva.Group;
   width: number;
   height: number;
+  order: number;
 }
 
 export default class Stages {
   k: Kanvas;
   list: KanvasStage[] = [];
   activeStageId = '';
-  stageCounter = 1;
   readonly maxStages = 10;
   panelEl: HTMLDivElement | null = null;
   titleEl: HTMLDivElement | null = null;
@@ -43,7 +43,6 @@ export default class Stages {
   reset() {
     this.list = [];
     this.activeStageId = '';
-    this.stageCounter = 1;
     this.collapsed = false;
     if (this.panelEl) this.panelEl.remove();
     this.panelEl = null;
@@ -138,8 +137,7 @@ export default class Stages {
   renderOverlay() {
     if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
     const stages = this.getStageList();
-    const activeIndex = this.list.findIndex((stage) => stage.id === this.activeStageId);
-    this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
+    this.titleLabelEl.textContent = `Stages: ${this.list.length}`;
     this.btnAdd.classList.toggle('disabled', !this.canCreateStage());
     this.listEl.textContent = '';
 
@@ -172,18 +170,26 @@ export default class Stages {
       label.textContent = stage.label;
       header.appendChild(label);
 
-      if (stage.removable) {
-        const remove = document.createElement('span');
-        remove.className = 'kanvas-button kanvas-stage-remove';
-        remove.title = `Delete ${stage.label}`;
-        remove.textContent = '\uf2d3';
-        remove.addEventListener('click', (evt) => {
-          evt.preventDefault();
-          evt.stopPropagation();
-          this.deleteStage(stage.id);
-        });
-        header.appendChild(remove);
-      }
+      const alignRight = document.createElement('span');
+      alignRight.style.marginLeft = 'auto';
+      header.appendChild(alignRight);
+
+      const order = document.createElement('span');
+      order.className = 'kanvas-button kanvas-stage-order';
+      order.textContent = `${stage.order}`;
+      order.title = `Stage order: ${stage.order} out of ${stages.length}`;
+      alignRight.appendChild(order);
+
+      const remove = document.createElement('span');
+      remove.className = 'kanvas-button kanvas-stage-remove';
+      remove.title = `Delete ${stage.label}`;
+      remove.textContent = '\uf2d3';
+      remove.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.deleteStage(stage.id);
+      });
+      alignRight.appendChild(remove);
 
       meta.appendChild(header);
 
@@ -195,6 +201,7 @@ export default class Stages {
       thumb.appendChild(meta);
 
       item.addEventListener('click', (evt) => {
+        if (evt.target instanceof HTMLElement && evt.target.closest('.kanvas-stage-remove')) return;
         evt.preventDefault();
         evt.stopPropagation();
         if (!stage.active) this.switchStage(stage.id);
@@ -219,11 +226,53 @@ export default class Stages {
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
-      removable: true,
       width: stage.width,
       height: stage.height,
+      order: stage.order,
       thumbnail: this.getStageThumbnail(stage.id),
     }));
+  }
+
+  updateStageOrder(activeStageId: string) {
+    const activeStage = this.list.find((stage) => stage.id === activeStageId);
+    if (!activeStage) return;
+    const otherStages = this.list
+      .filter((stage) => stage.id !== activeStageId)
+      .sort((a, b) => a.order - b.order);
+
+    activeStage.order = 1;
+    otherStages.forEach((stage, index) => {
+      stage.order = index + 2;
+    });
+  }
+
+  activateStage(id: string, updateOrder = true) {
+    const next = this.list.find((stage) => stage.id === id);
+    if (!next) return false;
+    this.activeStageId = id;
+    if (updateOrder) this.updateStageOrder(id);
+    this.list.forEach((stage) => {
+      const visible = stage.id === id;
+      stage.imageGroup.visible(visible);
+      stage.maskGroup.visible(visible);
+    });
+    this.syncActiveLayerRefs();
+    this.bindThumbnailListeners();
+    const nextWidth = Math.max(1, Math.round(next.width));
+    const nextHeight = Math.max(1, Math.round(next.height));
+    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.stage.size({ width: nextWidth, height: nextHeight });
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
+    this.k.resize?.updateSizeInputs?.();
+    this.k.resize?.fitStage?.();
+    this.k.layer.find('Transformer').forEach((t) => t.destroy());
+    this.k.selected = null as Konva.Node;
+    this.k.stage.batchDraw();
+    this.k.shapes?.drawShapes();
+    this.renderOverlay();
+    if (updateOrder) this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
+    return true;
   }
 
   getStageThumbnail(stageId: string) {
@@ -232,17 +281,20 @@ export default class Stages {
     const width = Math.max(1, Math.round(stage.width));
     const height = Math.max(1, Math.round(stage.height));
     const wasVisible = stage.imageGroup.visible();
-    // Inactive stages are hidden in the main view; force visibility for offscreen thumbnail capture.
-    if (!wasVisible) stage.imageGroup.visible(true);
+    if (!wasVisible) stage.imageGroup.visible(true); // Inactive stages are hidden in the main view; force visibility for offscreen thumbnail capture.
     const canvas = stage.imageGroup.toCanvas({
       x: 0,
       y: 0,
       width,
       height,
       imageSmoothingEnabled: false,
+      pixelRatio: 0.25,
     });
     if (!wasVisible) stage.imageGroup.visible(false);
-    return canvas.toDataURL('image/png');
+    return canvas.toDataURL({
+      mimeType: 'image/jpeg',
+      quality: 0.6,
+    });
   }
 
   syncActiveLayerRefs() {
@@ -270,8 +322,8 @@ export default class Stages {
       this.k.helpers?.showMessage?.(`Maximum stages reached: ${this.maxStages}`);
       return null;
     }
-    const id = `stage-${this.stageCounter}`;
     const stageNum = this.list.length + 1;
+    const id = `stage-${stageNum}`;
     const { imageGroup, maskGroup } = Stages.createStageNodes();
     this.k.imageLayer.add(imageGroup);
     this.k.maskLayer.add(maskGroup);
@@ -282,11 +334,11 @@ export default class Stages {
       maskGroup,
       width: this.k.stage.width(),
       height: this.k.stage.height(),
+      order: Infinity,
     };
     imageGroup.visible(false);
     maskGroup.visible(false);
     this.list.push(stageData);
-    this.stageCounter += 1;
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
@@ -295,31 +347,7 @@ export default class Stages {
   }
 
   switchStage(id: string) {
-    const next = this.list.find((stage) => stage.id === id);
-    if (!next) return false;
-    this.activeStageId = id;
-    this.list.forEach((stage) => {
-      const visible = stage.id === id;
-      stage.imageGroup.visible(visible);
-      stage.maskGroup.visible(visible);
-    });
-    this.syncActiveLayerRefs();
-    this.bindThumbnailListeners();
-    const nextWidth = Math.max(1, Math.round(next.width));
-    const nextHeight = Math.max(1, Math.round(next.height));
-    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.stage.size({ width: nextWidth, height: nextHeight });
-    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
-    this.k.resize?.updateSizeInputs?.();
-    this.k.resize?.fitStage?.();
-    this.k.layer.find('Transformer').forEach((t) => t.destroy());
-    this.k.selected = null as Konva.Node;
-    this.k.stage.batchDraw();
-    this.k.shapes?.drawShapes();
-    this.renderOverlay();
-    this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
-    return true;
+    return this.activateStage(id, true);
   }
 
   deleteStage(id: string) {
@@ -340,6 +368,9 @@ export default class Stages {
       this.activeStageId = this.list[nextIndex].id;
       this.switchStage(this.activeStageId);
     } else {
+      if (this.activeStageId && this.list.some((stage) => stage.id === this.activeStageId)) {
+        this.updateStageOrder(this.activeStageId);
+      }
       this.k.stage.batchDraw();
       this.renderOverlay();
       this.k.shapes?.refresh();

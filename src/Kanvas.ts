@@ -237,61 +237,48 @@ export default class Kanvas {
     Konva.Image.fromURL(url, onImage, onError);
   }
 
-  getImageData() {
-    const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
-    const ctxCanvas = imageCanvas.getContext('2d') as CanvasRenderingContext2D;
-    let imageData: ImageData | null = ctxCanvas.getImageData(0, 0, imageCanvas.width, imageCanvas.height); // imageData.data is Uint8ClampedArray [r,g,b,a,...]
-    const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
-    const ctxMask = maskCanvas.getContext('2d') as CanvasRenderingContext2D;
-    let maskData: ImageData | null = ctxMask.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-    const imageEmpty = imageData.data.every((value) => value === 0);
-    const maskEmpty = maskData.data.every((value) => value === 0);
-    if (imageEmpty) {
-      imageData = null;
-      this.helpers.showMessage('No image');
-      return null;
-    }
-    if (maskEmpty) {
-      maskData = null;
-      this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height}`);
-      return {
-        kanvas: true,
-        image: imageData?.data,
-        imageWidth: imageData?.width,
-        imageHeight: imageData?.height,
-      };
-    }
-    this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height} mask ${maskData.width} x ${maskData.height}`);
-    return {
-      kanvas: true,
-      image: imageData?.data,
-      imageWidth: imageData?.width,
-      imageHeight: imageData?.height,
-      mask: maskData?.data,
-      maskWidth: maskData?.width,
-      maskHeight: maskData?.height,
-    };
-  }
+  getImage(stageOrder = 1, imageOnly = false, fallback = true) {
+    const sortedStages = this.stages.list
+      .slice()
+      .sort((a, b) => a.order - b.order);
+    let stage = this.stages.list.find((item) => item.order === stageOrder);
+    if (fallback && !stage && (sortedStages.length > 0)) stage = sortedStages[0] || null;
+    if (!stage) return null;
 
-  getImage() {
     let imageData: string | null = null;
     let maskData: string | null = null;
-    if (this.imageGroup.hasChildren()) {
-      const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
+    const width = Math.max(1, Math.round(stage.width));
+    const height = Math.max(1, Math.round(stage.height));
+
+    const imageWasVisible = stage.imageGroup.visible();
+    if (!imageWasVisible) stage.imageGroup.visible(true);
+    if (stage.imageGroup.hasChildren()) {
+      const imageCanvas = stage.imageGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       imageData = imageCanvas.toDataURL('image/png');
     }
-    if (this.maskGroup.hasChildren()) {
-      const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
+    if (!imageWasVisible) stage.imageGroup.visible(false);
+
+    const maskWasVisible = stage.maskGroup.visible();
+    if (!maskWasVisible) stage.maskGroup.visible(true);
+    if (stage.maskGroup.hasChildren()) {
+      const maskCanvas = stage.maskGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       maskData = maskCanvas.toDataURL('image/png');
     }
-    if (!imageData) {
-      return null;
-    }
+    if (!maskWasVisible) stage.maskGroup.visible(false);
+
+    if (!imageData) return null;
     const result = { kanvas: true, image: null as string | null, mask: null as string | null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
-    this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    if (imageOnly) return result.image;
     return result;
+  }
+
+  getAllImages() {
+    const results = [];
+    for (let i = 0; i < this.stages.maxStages; i++) results.push(this.getImage(i + 1, false, false));
+    return results;
   }
 }
 

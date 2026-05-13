@@ -11846,8 +11846,10 @@ var Helpers = class {
     this.k = k;
   }
   isEmpty() {
-    const images = this.k.stage.find("Image");
-    return images.length === 0;
+    const activeStage = this.k.stages.getActiveStage();
+    if (!activeStage) return true;
+    const images = activeStage.imageGroup.find("Image").length + activeStage.maskGroup.find("Image").length;
+    return images === 0;
   }
   async kanvasLog(message) {
     if (typeof log !== "undefined") log("Kanvas:", message);
@@ -12355,6 +12357,7 @@ var Toolbar = class {
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.remove("active");
         this.setToolsTitle("none");
         this.k.imageMode = "none";
+        this.k.outpaint.doOutpaint(false);
       } else {
         this.k.imageMode = "outpaint";
         this.k.stopActions();
@@ -12362,6 +12365,7 @@ var Toolbar = class {
         this.btnOutpaint?.classList.add("active");
         document.getElementById(`${this.k.containerId}-outpaint-controls`)?.classList.add("active");
         this.setToolsTitle("outpaint");
+        this.k.outpaint.doOutpaint(true);
       }
     });
     document.getElementById(`${this.k.containerId}-outpaint-expand`)?.addEventListener("input", async (e) => {
@@ -12369,12 +12373,14 @@ var Toolbar = class {
       e.stopPropagation();
       this.k.outpaint.outpaintExpand = parseFloat(e.target.value);
       if (this.k.outpaint.outpaintExpand < 0 || this.k.outpaint.outpaintExpand > 1) this.k.outpaint.outpaintExpand = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
     document.getElementById(`${this.k.containerId}-outpaint-blur`)?.addEventListener("input", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.k.outpaint.outpaintBlur = parseFloat(e.target.value);
       if (this.k.outpaint.outpaintBlur < 0 || this.k.outpaint.outpaintBlur > 1) this.k.outpaint.outpaintBlur = 0.1;
+      this.k.outpaint.doOutpaint(true);
     });
     this.btnFilters = document.getElementById(`${this.k.containerId}-button-filters`);
     this.btnFilters?.addEventListener("click", async (e) => {
@@ -12426,6 +12432,18 @@ var Upload = class {
   constructor(k) {
     this.k = k;
   }
+  async setStageResolutionToImage(image) {
+    const width = Math.max(1, image.width());
+    const height = Math.max(1, image.height());
+    this.k.stage.size({ width, height });
+    this.k.stages.resizeActiveStageLayers(width, height);
+    this.k.stages.syncActiveLayerRefs();
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${width}px`;
+    this.k.resize.updateSizeInputs();
+    this.k.resize.fitStage();
+    this.k.stages.renderOverlay();
+    this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
+  }
   async pasteImage(e = null) {
     let items = [];
     if (e instanceof ClipboardEvent) {
@@ -12466,8 +12484,7 @@ var Upload = class {
         this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
@@ -12493,9 +12510,6 @@ var Upload = class {
     this.k.stopActions();
     this.k.toolbar.resetButtons();
     const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
-    const rect = this.k.stage.container().getBoundingClientRect();
-    const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
-    const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
     const shouldNotify = !this.k.imageGroup.hasChildren();
     for (const file of files) {
       if (!file.type.startsWith("image/")) continue;
@@ -12506,8 +12520,10 @@ var Upload = class {
         if (!this.k.stage) return;
         const image = new lib_default.Image({
           image: dropImage,
-          x: dropX,
-          y: dropY,
+          // x: dropX,
+          // y: dropY,
+          x: 0,
+          y: 0,
           draggable: false,
           opacity: this.k.opacity
         });
@@ -12517,8 +12533,7 @@ var Upload = class {
         this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
@@ -12889,7 +12904,7 @@ var Paint = class {
   }
   buildWandCache() {
     this.k.stages.syncActiveLayerRefs();
-    const sourceCanvas = this.wandSampleMerged ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() }) : this.k.layer.toCanvas({ x: 0, y: 0, width: this.k.layer.width(), height: this.k.layer.height() });
+    const sourceCanvas = this.wandSampleMerged ? this.k.stage.toCanvas({ x: 0, y: 0, width: this.k.stage.width(), height: this.k.stage.height() }) : this.k.selectedLayer === "mask" ? this.k.imageLayer.toCanvas({ x: 0, y: 0, width: this.k.imageLayer.width(), height: this.k.imageLayer.height() }) : this.k.layer.toCanvas({ x: 0, y: 0, width: this.k.layer.width(), height: this.k.layer.height() });
     const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) {
       this.wandCache = null;
@@ -13233,27 +13248,41 @@ var Outpaint = class {
     const canvas = this.k.imageLayer.toCanvas({ imageSmoothingEnabled: false });
     const filled = fillTransparent(canvas, 0);
     const konvaImg = new lib_default.Image({ x: 0, y: 0, image: filled });
-    konvaImg.name("fill");
+    konvaImg.name("fill-outpaint");
     konvaImg.cache({ imageSmoothingEnabled: false });
     this.k.imageGroup.add(konvaImg);
     this.k.imageGroup.cache();
     this.k.imageLayer.cache();
     this.k.imageLayer.batchDraw();
   }
-  remove() {
-    this.k.maskGroup.children.forEach(async (child) => {
-      if (child.name() === "mask-outpaint" || child.name() === "fill") await child.destroy();
+  removeOutpaint() {
+    const toRemove = [];
+    this.k.maskGroup.children.forEach((child) => {
+      if (child.name().endsWith("-outpaint")) toRemove.push(child);
     });
-    this.k.imageGroup.children.forEach(async (child) => {
-      if (child.name() === "mask-outpaint" || child.name() === "fill") await child.destroy();
+    this.k.imageGroup.children.forEach((child) => {
+      if (child.name().endsWith("-outpaint")) toRemove.push(child);
     });
-    this.k.imageGroup.cache();
-    this.k.layer.batchDraw();
+    toRemove.forEach((node) => node.destroy());
+    this.k.maskGroup.filters([]);
+    this.k.maskGroup.blurRadius(0);
+    this.k.maskGroup.clearCache();
+    this.k.imageGroup.clearCache();
+    this.k.imageLayer.clearCache();
+    this.k.maskLayer.clearCache();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
+    this.outpaintActive = false;
   }
-  doOutpaint() {
+  doOutpaint(action = true) {
+    if (!action) {
+      this.removeOutpaint();
+      return;
+    }
     this.k.imageMode = "outpaint";
     this.k.helpers.showMessage(`Image mode=outpaint blur=${this.outpaintBlur} expand=${this.outpaintExpand}`);
-    this.remove();
+    this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new lib_default.Rect({
       x: 0,
@@ -13280,6 +13309,7 @@ var Outpaint = class {
         globalCompositeOperation: "destination-out"
         // punch hole
       });
+      imageRect.name("image-outpaint");
       this.k.maskGroup.add(imageRect);
     }
     this.k.maskGroup.cache();
@@ -13287,7 +13317,9 @@ var Outpaint = class {
       this.k.maskGroup.filters([lib_default.Filters.Blur]);
       this.k.maskGroup.blurRadius(this.outpaintBlur * 100);
     }
-    this.k.layer.batchDraw();
+    this.k.imageLayer.batchDraw();
+    this.k.maskLayer.batchDraw();
+    this.k.stage.batchDraw();
     this.outpaintActive = true;
     this.k.history.capture("Outpaint apply");
   }
@@ -13632,7 +13664,6 @@ var Stages = class _Stages {
   k;
   list = [];
   activeStageId = "";
-  stageCounter = 1;
   maxStages = 10;
   panelEl = null;
   titleEl = null;
@@ -13658,7 +13689,6 @@ var Stages = class _Stages {
   reset() {
     this.list = [];
     this.activeStageId = "";
-    this.stageCounter = 1;
     this.collapsed = false;
     if (this.panelEl) this.panelEl.remove();
     this.panelEl = null;
@@ -13741,8 +13771,7 @@ var Stages = class _Stages {
   renderOverlay() {
     if (!this.titleLabelEl || !this.listEl || !this.btnAdd) return;
     const stages2 = this.getStageList();
-    const activeIndex = this.list.findIndex((stage) => stage.id === this.activeStageId);
-    this.titleLabelEl.textContent = `Stages: ${activeIndex >= 0 ? activeIndex + 1 : 1}`;
+    this.titleLabelEl.textContent = `Stages: ${this.list.length}`;
     this.btnAdd.classList.toggle("disabled", !this.canCreateStage());
     this.listEl.textContent = "";
     stages2.forEach((stage) => {
@@ -13769,18 +13798,24 @@ var Stages = class _Stages {
       label.className = "kanvas-stage-label";
       label.textContent = stage.label;
       header.appendChild(label);
-      if (stage.removable) {
-        const remove = document.createElement("span");
-        remove.className = "kanvas-button kanvas-stage-remove";
-        remove.title = `Delete ${stage.label}`;
-        remove.textContent = "\uF2D3";
-        remove.addEventListener("click", (evt) => {
-          evt.preventDefault();
-          evt.stopPropagation();
-          this.deleteStage(stage.id);
-        });
-        header.appendChild(remove);
-      }
+      const alignRight = document.createElement("span");
+      alignRight.style.marginLeft = "auto";
+      header.appendChild(alignRight);
+      const order = document.createElement("span");
+      order.className = "kanvas-button kanvas-stage-order";
+      order.textContent = `${stage.order}`;
+      order.title = `Stage order: ${stage.order} out of ${stages2.length}`;
+      alignRight.appendChild(order);
+      const remove = document.createElement("span");
+      remove.className = "kanvas-button kanvas-stage-remove";
+      remove.title = `Delete ${stage.label}`;
+      remove.textContent = "\uF2D3";
+      remove.addEventListener("click", (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        this.deleteStage(stage.id);
+      });
+      alignRight.appendChild(remove);
       meta.appendChild(header);
       const resolution = document.createElement("span");
       resolution.className = "kanvas-stage-resolution";
@@ -13788,6 +13823,7 @@ var Stages = class _Stages {
       meta.appendChild(resolution);
       thumb.appendChild(meta);
       item.addEventListener("click", (evt) => {
+        if (evt.target instanceof HTMLElement && evt.target.closest(".kanvas-stage-remove")) return;
         evt.preventDefault();
         evt.stopPropagation();
         if (!stage.active) this.switchStage(stage.id);
@@ -13809,11 +13845,48 @@ var Stages = class _Stages {
       id: stage.id,
       label: stage.label,
       active: stage.id === this.activeStageId,
-      removable: true,
       width: stage.width,
       height: stage.height,
+      order: stage.order,
       thumbnail: this.getStageThumbnail(stage.id)
     }));
+  }
+  updateStageOrder(activeStageId) {
+    const activeStage = this.list.find((stage) => stage.id === activeStageId);
+    if (!activeStage) return;
+    const otherStages = this.list.filter((stage) => stage.id !== activeStageId).sort((a, b) => a.order - b.order);
+    activeStage.order = 1;
+    otherStages.forEach((stage, index) => {
+      stage.order = index + 2;
+    });
+  }
+  activateStage(id, updateOrder = true) {
+    const next = this.list.find((stage) => stage.id === id);
+    if (!next) return false;
+    this.activeStageId = id;
+    if (updateOrder) this.updateStageOrder(id);
+    this.list.forEach((stage) => {
+      const visible = stage.id === id;
+      stage.imageGroup.visible(visible);
+      stage.maskGroup.visible(visible);
+    });
+    this.syncActiveLayerRefs();
+    this.bindThumbnailListeners();
+    const nextWidth = Math.max(1, Math.round(next.width));
+    const nextHeight = Math.max(1, Math.round(next.height));
+    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
+    this.k.stage.size({ width: nextWidth, height: nextHeight });
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
+    this.k.resize?.updateSizeInputs?.();
+    this.k.resize?.fitStage?.();
+    this.k.layer.find("Transformer").forEach((t) => t.destroy());
+    this.k.selected = null;
+    this.k.stage.batchDraw();
+    this.k.shapes?.drawShapes();
+    this.renderOverlay();
+    if (updateOrder) this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
+    return true;
   }
   getStageThumbnail(stageId) {
     const stage = this.list.find((item) => item.id === stageId);
@@ -13827,10 +13900,14 @@ var Stages = class _Stages {
       y: 0,
       width,
       height,
-      imageSmoothingEnabled: false
+      imageSmoothingEnabled: false,
+      pixelRatio: 0.25
     });
     if (!wasVisible) stage.imageGroup.visible(false);
-    return canvas.toDataURL("image/png");
+    return canvas.toDataURL({
+      mimeType: "image/jpeg",
+      quality: 0.6
+    });
   }
   syncActiveLayerRefs() {
     const active = this.getActiveStage();
@@ -13855,8 +13932,8 @@ var Stages = class _Stages {
       this.k.helpers?.showMessage?.(`Maximum stages reached: ${this.maxStages}`);
       return null;
     }
-    const id = `stage-${this.stageCounter}`;
     const stageNum = this.list.length + 1;
+    const id = `stage-${stageNum}`;
     const { imageGroup, maskGroup } = _Stages.createStageNodes();
     this.k.imageLayer.add(imageGroup);
     this.k.maskLayer.add(maskGroup);
@@ -13866,12 +13943,12 @@ var Stages = class _Stages {
       imageGroup,
       maskGroup,
       width: this.k.stage.width(),
-      height: this.k.stage.height()
+      height: this.k.stage.height(),
+      order: Infinity
     };
     imageGroup.visible(false);
     maskGroup.visible(false);
     this.list.push(stageData);
-    this.stageCounter += 1;
     this.switchStage(id);
     this.renderOverlay();
     this.k.helpers?.showMessage?.(`Created stage: ${stageData.label}`);
@@ -13879,31 +13956,7 @@ var Stages = class _Stages {
     return id;
   }
   switchStage(id) {
-    const next = this.list.find((stage) => stage.id === id);
-    if (!next) return false;
-    this.activeStageId = id;
-    this.list.forEach((stage) => {
-      const visible = stage.id === id;
-      stage.imageGroup.visible(visible);
-      stage.maskGroup.visible(visible);
-    });
-    this.syncActiveLayerRefs();
-    this.bindThumbnailListeners();
-    const nextWidth = Math.max(1, Math.round(next.width));
-    const nextHeight = Math.max(1, Math.round(next.height));
-    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.stage.size({ width: nextWidth, height: nextHeight });
-    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
-    this.k.resize?.updateSizeInputs?.();
-    this.k.resize?.fitStage?.();
-    this.k.layer.find("Transformer").forEach((t) => t.destroy());
-    this.k.selected = null;
-    this.k.stage.batchDraw();
-    this.k.shapes?.drawShapes();
-    this.renderOverlay();
-    this.k.helpers?.showMessage?.(`Active stage: ${next.label}`);
-    return true;
+    return this.activateStage(id, true);
   }
   deleteStage(id) {
     const index = this.list.findIndex((stage) => stage.id === id);
@@ -13921,6 +13974,9 @@ var Stages = class _Stages {
       this.activeStageId = this.list[nextIndex].id;
       this.switchStage(this.activeStageId);
     } else {
+      if (this.activeStageId && this.list.some((stage) => stage.id === this.activeStageId)) {
+        this.updateStageOrder(this.activeStageId);
+      }
       this.k.stage.batchDraw();
       this.renderOverlay();
       this.k.shapes?.refresh();
@@ -13977,13 +14033,13 @@ var History = class _History {
       label: stage.label,
       width: stage.width,
       height: stage.height,
+      order: stage.order,
       imageJSON: stage.imageGroup.toJSON(),
       imageSources: _History.serializeImageSources(stage.imageGroup),
       maskJSON: stage.maskGroup.toJSON(),
       maskSources: _History.serializeImageSources(stage.maskGroup)
     }));
     return {
-      stageCounter: this.k.stages.stageCounter,
       activeStageId: this.k.stages.activeStageId,
       selectedLayer: this.k.selectedLayer,
       actionLabel: "Edit",
@@ -14097,13 +14153,13 @@ var History = class _History {
           imageGroup,
           maskGroup,
           width: stageSnap.width,
-          height: stageSnap.height
+          height: stageSnap.height,
+          order: stageSnap.order
         };
       });
       this.k.stages.list = restored;
-      this.k.stages.stageCounter = snapshot.stageCounter;
       const targetStageId = restored.find((s) => s.id === snapshot.activeStageId)?.id || restored[0]?.id || "";
-      if (targetStageId) this.k.stages.switchStage(targetStageId);
+      if (targetStageId) this.k.stages.activateStage(targetStageId, false);
       this.k.selectedLayer = snapshot.selectedLayer;
       if (this.k.selectedLayer === "mask") this.k.toolbar.btnSelectMask?.click();
       else this.k.toolbar.btnSelectImage?.click();
@@ -14323,60 +14379,41 @@ var Kanvas = class {
     };
     lib_default.Image.fromURL(url, onImage, onError);
   }
-  getImageData() {
-    const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
-    const ctxCanvas = imageCanvas.getContext("2d");
-    let imageData = ctxCanvas.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
-    const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
-    const ctxMask = maskCanvas.getContext("2d");
-    let maskData = ctxMask.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
-    const imageEmpty = imageData.data.every((value) => value === 0);
-    const maskEmpty = maskData.data.every((value) => value === 0);
-    if (imageEmpty) {
-      imageData = null;
-      this.helpers.showMessage("No image");
-      return null;
-    }
-    if (maskEmpty) {
-      maskData = null;
-      this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height}`);
-      return {
-        kanvas: true,
-        image: imageData?.data,
-        imageWidth: imageData?.width,
-        imageHeight: imageData?.height
-      };
-    }
-    this.helpers.showMessage(`Send image ${imageData.width} x ${imageData.height} mask ${maskData.width} x ${maskData.height}`);
-    return {
-      kanvas: true,
-      image: imageData?.data,
-      imageWidth: imageData?.width,
-      imageHeight: imageData?.height,
-      mask: maskData?.data,
-      maskWidth: maskData?.width,
-      maskHeight: maskData?.height
-    };
-  }
-  getImage() {
+  getImage(stageOrder = 1, imageOnly = false, fallback = true) {
+    const sortedStages = this.stages.list.slice().sort((a, b) => a.order - b.order);
+    let stage = this.stages.list.find((item) => item.order === stageOrder);
+    if (fallback && !stage && sortedStages.length > 0) stage = sortedStages[0] || null;
+    if (!stage) return null;
     let imageData = null;
     let maskData = null;
-    if (this.imageGroup.hasChildren()) {
-      const imageCanvas = this.imageLayer.toCanvas({ x: 0, y: 0, width: this.imageLayer.width(), height: this.imageLayer.height() });
+    const width = Math.max(1, Math.round(stage.width));
+    const height = Math.max(1, Math.round(stage.height));
+    const imageWasVisible = stage.imageGroup.visible();
+    if (!imageWasVisible) stage.imageGroup.visible(true);
+    if (stage.imageGroup.hasChildren()) {
+      const imageCanvas = stage.imageGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       imageData = imageCanvas.toDataURL("image/png");
     }
-    if (this.maskGroup.hasChildren()) {
-      const maskCanvas = this.maskLayer.toCanvas({ x: 0, y: 0, width: this.maskLayer.width(), height: this.maskLayer.height() });
+    if (!imageWasVisible) stage.imageGroup.visible(false);
+    const maskWasVisible = stage.maskGroup.visible();
+    if (!maskWasVisible) stage.maskGroup.visible(true);
+    if (stage.maskGroup.hasChildren()) {
+      const maskCanvas = stage.maskGroup.toCanvas({ x: 0, y: 0, width, height, imageSmoothingEnabled: false });
       maskData = maskCanvas.toDataURL("image/png");
     }
-    if (!imageData) {
-      return null;
-    }
+    if (!maskWasVisible) stage.maskGroup.visible(false);
+    if (!imageData) return null;
     const result = { kanvas: true, image: null, mask: null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
-    this.helpers.showMessage(`Send image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    if (imageOnly) return result.image;
     return result;
+  }
+  getAllImages() {
+    const results = [];
+    for (let i = 0; i < this.stages.maxStages; i++) results.push(this.getImage(i + 1, false, false));
+    return results;
   }
 };
 window.Kanvas = Kanvas;

@@ -12,16 +12,32 @@ with tools for upload, paste, paint, resize, crop, filters, text, outpaint, mask
 
 ## Quick Navigation
 
-- [Stages](#stages)
-- [Working with Objects](#working-with-objects)
-- [Text vs Image vs Inpaint](#text-vs-image-vs-inpaint)
-- [Toolbar](#toolbar)
-- [Overlay](#overlay)
-- [Magic Wand](#magic-wand)
-- [Outpaint](#outpaint)
-- [Settings](#settings)
-- [Server-side Masking](#server-side-masking)
-- [Disable Kanvas](#disable-kanvas)
+- [Kanvas](#kanvas)
+  - [At a Glance](#at-a-glance)
+  - [Quick Navigation](#quick-navigation)
+    - [Stages](#stages)
+    - [Working with Objects](#working-with-objects)
+    - [Shapes List](#shapes-list)
+    - [Text vs Image vs Inpaint](#text-vs-image-vs-inpaint)
+    - [Toolbar](#toolbar)
+    - [Overlay](#overlay)
+    - [Layer Selection](#layer-selection)
+    - [Upload / Paste / Remove / Reset](#upload--paste--remove--reset)
+    - [Undo / Redo](#undo--redo)
+    - [Opacity](#opacity)
+    - [Move / Resize](#move--resize)
+    - [Crop](#crop)
+    - [Paint](#paint)
+    - [Magic Wand](#magic-wand)
+    - [Outpaint](#outpaint)
+    - [Filters](#filters)
+    - [Text](#text)
+    - [Zoom / Scale](#zoom--scale)
+    - [Practical Tips](#practical-tips)
+    - [Settings](#settings)
+    - [Server-side Masking](#server-side-masking)
+    - [Disable Kanvas](#disable-kanvas)
+    - [Implementation](#implementation)
 
 ![Image](https://github.com/user-attachments/assets/6a857a2c-313a-4bf6-9f64-b2f2b716e2fe)
 
@@ -179,6 +195,7 @@ Use *Magic Wand* to fill contiguous regions in the active layer based on color s
 - Works in both image and mask layers
 - Uses the current brush color, opacity, and blend mode
 - For mask layer painting, color is converted to grayscale
+- When wand is active on the mask layer, matching samples from the image layer and creates the mask fill on the mask layer
 - Tolerance controls how broadly similar pixels are included
 
 Wand matching source:

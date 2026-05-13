@@ -8,6 +8,19 @@ export default class Upload {
     this.k = k;
   }
 
+  private async setStageResolutionToImage(image: Konva.Image) {
+    const width = Math.max(1, image.width());
+    const height = Math.max(1, image.height());
+    this.k.stage.size({ width, height });
+    this.k.stages.resizeActiveStageLayers(width, height);
+    this.k.stages.syncActiveLayerRefs();
+    if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${width}px`;
+    this.k.resize.updateSizeInputs();
+    this.k.resize.fitStage();
+    this.k.stages.renderOverlay();
+    this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
+  }
+
   async pasteImage(e: ClipboardEvent | null = null) {
     let items: DataTransferItemList | ClipboardItems = [];
     if (e instanceof ClipboardEvent) {
@@ -48,8 +61,7 @@ export default class Upload {
         this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === 'mask') {
@@ -76,9 +88,9 @@ export default class Upload {
     this.k.stopActions();
     this.k.toolbar.resetButtons();
     const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
-    const rect = this.k.stage.container().getBoundingClientRect();
-    const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
-    const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
+    // const rect = this.k.stage.container().getBoundingClientRect();
+    // const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
+    // const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
     const shouldNotify = !this.k.imageGroup.hasChildren();
     for (const file of files as File[]) {
       if (!file.type.startsWith('image/')) continue;
@@ -89,8 +101,10 @@ export default class Upload {
         if (!this.k.stage) return;
         const image = new Konva.Image({
           image: dropImage,
-          x: dropX,
-          y: dropY,
+          // x: dropX,
+          // y: dropY,
+          x: 0,
+          y: 0,
           draggable: false,
           opacity: this.k.opacity,
         });
@@ -100,8 +114,7 @@ export default class Upload {
         this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) {
-          this.k.stage.size({ width: 0, height: 0 });
-          this.k.resize.resizeStageToFit(image);
+          await this.setStageResolutionToImage(image);
         }
         this.k.group.add(image);
         if (this.k.selectedLayer === 'mask') {

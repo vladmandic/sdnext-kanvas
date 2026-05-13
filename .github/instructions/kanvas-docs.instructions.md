@@ -1,8 +1,7 @@
 ---
 description: "Use when updating Kanvas.md documentation. Covers scope, style, and validation expectations for repository docs updates."
 name: "Kanvas Documentation Updates"
-applyTo:
-  - "Kanvas.md"
+applyTo: "Kanvas.md"
 ---
 # Kanvas Documentation Updates
 

@@ -15,7 +15,10 @@
   height: 100%;
   min-height: 8rem;
   min-width: 8rem;
-  margin: auto;
+  margin-bottom: auto;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 0;
 }
 
 .kanvas-wrapper {
@@ -44,11 +47,11 @@
   z-index: 1;
   border-radius: var(--kanvas-radius);
   transition: opacity 0.2s ease-in, background-color 0.2s ease-in;
+  background-color: unset;
 }
 
 .kanvas-toolbar.active {
   opacity: 1;
-  background-color: hsl(var(--kanvas-color), 0%, 10%);
 }
 
 .kanvas-toolbar span {
@@ -78,7 +81,7 @@
   background: hsl(var(--kanvas-color), 0%, 9%);
   border: 1px solid hsl(var(--kanvas-color), 10%, 24%);
   border-radius: calc(1.5 * var(--kanvas-radius));
-  box-shadow: 0 0.375rem 1rem hsla(var(--kanvas-color), 20%, 2%, 0.55);
+  box-shadow: 1px 1px 4px hsla(var(--kanvas-color), 20%, 2%, 0.55);
   padding: 0.4em;
   opacity: 0.85;
   overflow-x: hidden;
@@ -111,6 +114,7 @@
   border: none;
   text-align: right;
   width: 4.5em;
+  min-height: unset;
 }
 
 .kanvas-shapes {
@@ -123,7 +127,7 @@
   line-height: 1.25em;
   user-select: none;
   cursor: pointer;
-  padding-bottom: 0.2em;
+  padding: 0.5em 0 0.5em 0;
 }
 
 .kanvas-overlay.overlay-collapsed > :not(.kanvas-resolution) {
@@ -301,6 +305,11 @@
   min-width: 0;
   padding: 0.35em 0.4em;
   background: linear-gradient(180deg, hsla(var(--kanvas-color), 0%, 4%, 0.7) 0%, hsla(var(--kanvas-color), 0%, 4%, 0.08) 48%, hsla(var(--kanvas-color), 0%, 4%, 0.8) 100%);
+  pointer-events: none;
+}
+
+.kanvas-stage-meta * {
+  pointer-events: auto;
 }
 
 .kanvas-stage-header {
@@ -310,12 +319,33 @@
   gap: 0.4em;
 }
 
+.kanvas-stage-order {
+  color: hsl(var(--kanvas-color), 0%, 12%) !important;
+  background-color: hsl(var(--kanvas-color), 0%, 85%);
+  font-family: monospace;
+  vertical-align: top;
+  padding: 0.1em 0.4em 0.1em 0.4em !important;
+  border-radius: 2px !important;
+  font-weight: bolder;
+  position: absolute;
+  top: 0.35em;
+  right: 2.7em;
+}
+
 .kanvas-stage-remove {
-  padding: 0.05em 0.25em;
-  line-height: 1;
-  margin-right: 0;
-  letter-spacing: 0;
-  font-size: 1.4em;
+  position: absolute;
+  top: 0.35em;
+  right: 0.35em;
+  font-size: 1.6em;
+  background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  z-index: 2;
+  pointer-events: auto;
+  padding: 0 !important;
+}
+
+.kanvas-stage-heading:hover {
+  color: hsl(var(--kanvas-color), 0%, 96%) !important;
 }
 
 .kanvas-stage-resolution {
@@ -407,7 +437,7 @@
 }
 .kanvas-toolbar .kanvas-button.active {
   color: hsl(180, 100%, 60%);
-  text-shadow: 0 0.0625em 0 hsla(var(--kanvas-color), 0%, 100%, 0.2), 0 -0.0625em 0 hsla(var(--kanvas-color), 0%, 0%, 0.55), 0 0 1.5em hsla(180, 100%, 60%, 0.8), 0 0 0.5em hsla(180, 100%, 60%, 0.6);
+  text-shadow: 1px 1px 4px hsla(var(--kanvas-color), 0%, 100%, 0.2);
   filter: brightness(1.3);
 }
 .kanvas-button.disabled {
