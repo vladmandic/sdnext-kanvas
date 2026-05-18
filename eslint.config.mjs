@@ -138,16 +138,6 @@ const jsonConfig = defineConfig([
   },
 ]);
 
-// const markdownConfig = defineConfig([
-//   {
-//     files: ['**/*.md'],
-//     plugins: { markdown },
-//     language: 'markdown/gfm',
-//     processor: 'markdown/markdown',
-//     extends: ['markdown/recommended'],
-//   },
-// ]);
-
 const cssConfig = defineConfig([
   {
     files: ['**/*.css'],
@@ -196,7 +186,6 @@ export default defineConfig([
   ...typescriptConfig,
   ...nodeConfig,
   ...jsonConfig,
-  // ...markdownConfig,
   ...cssConfig,
   ...htmlConfig,
 ]);

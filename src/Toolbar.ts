@@ -234,7 +234,7 @@ export default class Toolbar {
     this.btnRemove?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.removeNode(this.k.selected);
+      if (this.k.selected) this.k.removeNode(this.k.selected);
     });
     this.btnUndo?.addEventListener('click', async (e) => {
       e.preventDefault();

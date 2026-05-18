@@ -29,7 +29,7 @@ export default class Kanvas {
   group!: Konva.Group; // meta
   imageGroup!: Konva.Group;
   maskGroup!: Konva.Group;
-  selected!: Konva.Node;
+  selected: Konva.Node | null = null;
   // modes
   selectedLayer: 'image' | 'mask' = 'image';
   imageMode: 'none' | 'upload' | 'resize' | 'crop' | 'paint' | 'wand' | 'filters' | 'text' | 'outpaint' = 'upload';
@@ -276,7 +276,7 @@ export default class Kanvas {
   }
 
   getAllImages() {
-    const results = [];
+    const results: ReturnType<Kanvas['getImage']>[] = [];
     for (let i = 0; i < this.stages.maxStages; i++) results.push(this.getImage(i + 1, false, false));
     return results;
   }

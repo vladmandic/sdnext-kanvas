@@ -12115,7 +12115,7 @@ var Toolbar = class {
     this.btnRemove?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.removeNode(this.k.selected);
+      if (this.k.selected) this.k.removeNode(this.k.selected);
     });
     this.btnUndo?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -13904,10 +13904,7 @@ var Stages = class _Stages {
       pixelRatio: 0.25
     });
     if (!wasVisible) stage.imageGroup.visible(false);
-    return canvas.toDataURL({
-      mimeType: "image/jpeg",
-      quality: 0.6
-    });
+    return canvas.toDataURL("image/jpeg", 0.6);
   }
   syncActiveLayerRefs() {
     const active = this.getActiveStage();
@@ -14194,7 +14191,7 @@ var Kanvas = class {
   // meta
   imageGroup;
   maskGroup;
-  selected;
+  selected = null;
   // modes
   selectedLayer = "image";
   imageMode = "upload";
