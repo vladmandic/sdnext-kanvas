@@ -166,8 +166,10 @@ export default class Settings {
     if (window.localStorage) {
       const raw = window.localStorage.getItem('sdnext-kanvas');
       const data = raw ? JSON.parse(raw) : {};
-      for (const key in this.settings) {
-        if (data[key] !== undefined) this.settings[key] = data[key];
+      const typedSettings = this.settings as Record<keyof typeof this.settings, unknown>;
+      for (const key of Object.keys(this.settings) as (keyof typeof this.settings)[]) {
+        const value = data[key];
+        if (value !== undefined) typedSettings[key] = value;
       }
     }
     this.saveSettings();

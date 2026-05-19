@@ -262,13 +262,13 @@ export default class Toolbar {
     });
 
     // group: size inputs
-    const resizeFromInputs = async (evt) => {
+    const resizeFromInputs = async (evt: Event) => {
       evt.preventDefault();
       evt.stopPropagation();
       const widthInput = document.getElementById(`${this.k.containerId}-image-width`) as HTMLInputElement;
       const heightInput = document.getElementById(`${this.k.containerId}-image-height`) as HTMLInputElement;
-      const width = parseInt((widthInput).value, 10);
-      const height = parseInt((heightInput).value, 10);
+      const width = parseInt(widthInput.value, 10);
+      const height = parseInt(heightInput.value, 10);
       this.k.resize.resizeStage(width, height);
     };
     document.getElementById(`${this.k.containerId}-image-width`)?.addEventListener('input', async (e) => resizeFromInputs(e));

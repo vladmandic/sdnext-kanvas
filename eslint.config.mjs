@@ -26,11 +26,8 @@ const jsConfig = defineConfig([
     },
   },
   pluginPromise.configs['flat/recommended'],
-  // Stylistic plugin
   plugins.stylistic,
-  // Import X plugin
   plugins.importX,
-  // Airbnb base recommended config
   ...configs.base.recommended,
   {
     files: helpers.extensions.allFiles,
@@ -72,7 +69,6 @@ const jsConfig = defineConfig([
       'no-control-regex': 'off',
       'no-param-reassign': ['error', { props: false }],
       '@typescript-eslint/no-for-in-array': 'off',
-      // Begin copy from SDNext
       '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
       '@stylistic/indent': ['error', 2],
       '@stylistic/lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: true }],
@@ -86,9 +82,7 @@ const jsConfig = defineConfig([
 ]);
 
 const typescriptConfig = defineConfig([
-  // TypeScript ESLint plugin
   plugins.typescriptEslint,
-  // Airbnb base TypeScript config
   ...configs.base.typescript,
   {
     name: 'sdnext/typescript',
@@ -104,7 +98,6 @@ const typescriptConfig = defineConfig([
 ]);
 
 const nodeConfig = defineConfig([
-  // Node plugin
   plugins.node,
   {
     name: 'sdnext/node',
@@ -116,7 +109,6 @@ const nodeConfig = defineConfig([
       },
     },
     rules: {
-      // Import as rule sets to override the `files` setting from default config
       ...rules.node.base.rules,
       ...rules.node.globals.rules,
       ...rules.node.noUnsupportedFeatures.rules,
@@ -144,9 +136,6 @@ const cssConfig = defineConfig([
     language: 'css/css',
     plugins: { css },
     extends: ['css/recommended'],
-    // languageOptions: {
-    //   tolerant: true,
-    // },
     rules: {
       'css/font-family-fallbacks': 'off',
       'css/no-invalid-properties': ['error', { allowUnknownVariables: true }],
@@ -172,6 +161,7 @@ const htmlConfig = defineConfig([
       'html/no-extra-spacing-attrs': ['error', { enforceBeforeSelfClose: true, disallowMissing: true, disallowTabs: true, disallowInAssignment: true }],
       'html/require-closing-tags': ['error', { selfClosing: 'always' }],
       'html/use-baseline': 'off',
+      'html/no-extra-spacing-tags': 'off',
     },
   },
 ]);

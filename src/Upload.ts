@@ -83,16 +83,19 @@ export default class Upload {
     }
   }
 
-  async uploadImage(e) {
+  async uploadImage(e: DragEvent | Event) {
     e.preventDefault();
     this.k.stopActions();
     this.k.toolbar.resetButtons();
-    const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
+    const files = Array.from(
+      (e as DragEvent).dataTransfer?.files
+      ?? ((e.target as HTMLInputElement | null)?.files ?? []),
+    );
     // const rect = this.k.stage.container().getBoundingClientRect();
     // const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
     // const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
     const shouldNotify = !this.k.imageGroup.hasChildren();
-    for (const file of files as File[]) {
+    for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
