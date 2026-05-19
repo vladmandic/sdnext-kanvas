@@ -14367,6 +14367,8 @@ var Kanvas = class {
     this.stopActions();
     const onImage = (img) => {
       this.imageGroup.add(img);
+      this.controls.style.display = "inline";
+      this.toolbar.show();
       this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
       this.resize.resizeStageToFit(img, true);
       this.history.capture("Add image");
