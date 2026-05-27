@@ -16,7 +16,7 @@ export default class Helpers {
   async kanvasLog(message: string) { // eslint-disable-line class-methods-use-this
     // @ts-ignore
     if (typeof log !== 'undefined') log('Kanvas:', message);
-    else console.log('Kanvas:', message); // eslint-disable-line no-console
+    else console.log('Kanvas:', message);
   }
 
   async showMessage(msg: string, duration = this.k.settings.settings.messageTimeout) {

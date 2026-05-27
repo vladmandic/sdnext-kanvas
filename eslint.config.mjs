@@ -45,6 +45,7 @@ const jsConfig = defineConfig([
       'dot-notation': 'off',
       'func-names': 'off',
       'guard-for-in': 'off',
+      'no-console': 'off',
       'import-x/extensions': 'off',
       'import-x/no-named-as-default': 'off',
       'import-x/prefer-default-export': 'off',
