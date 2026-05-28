@@ -110,7 +110,6 @@ export default class Resize {
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
-      this.k.notifyImage();
     }
     // limit max size
     if ((this.k.stage.width() > this.k.settings.settings.maxSize) || (this.k.stage.height() > this.k.settings.settings.maxSize)) {
@@ -125,6 +124,7 @@ export default class Resize {
       this.fitStage();
       this.k.stages.renderOverlay();
     }
+    this.k.notifyImage();
   }
 
   async resizeStageToFit(el: Konva.Image | Konva.Group, force = false) {

@@ -12684,7 +12684,6 @@ var Resize = class {
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
-      this.k.notifyImage();
     }
     if (this.k.stage.width() > this.k.settings.settings.maxSize || this.k.stage.height() > this.k.settings.settings.maxSize) {
       const rescale = Math.min(this.k.settings.settings.maxSize / this.k.stage.width(), this.k.settings.settings.maxSize / this.k.stage.height());
@@ -12698,6 +12697,7 @@ var Resize = class {
       this.fitStage();
       this.k.stages.renderOverlay();
     }
+    this.k.notifyImage();
   }
   async resizeStageToFit(el, force = false) {
     clearTimeout(this.debounceResize);
