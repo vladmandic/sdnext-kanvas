@@ -172,6 +172,7 @@ export default defineConfig([
   includeIgnoreFile(gitignorePath),
   globalIgnores([
     '**/dist/**',
+    '**/*.mjs',
   ]),
   ...jsConfig,
   ...typescriptConfig,
