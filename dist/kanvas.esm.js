@@ -12708,6 +12708,7 @@ var Resize = class {
     await this._resizeStage(el, force);
   }
   async resizeStage(width, height) {
+    if (!this.k || !this.k.stage) return;
     this.k.stage.width(width);
     this.k.stage.height(height);
     this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
