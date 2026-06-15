@@ -46,23 +46,30 @@
   left: 0;
   z-index: 1;
   border-radius: var(--kanvas-radius);
-  transition: opacity 0.2s ease-in, background-color 0.2s ease-in;
+  transition: opacity 0.1s ease-in, background-color 0.1s ease-in;
   background-color: unset;
 }
 
 .kanvas-toolbar.active {
-  opacity: 1;
+  opacity: 1.0;
 }
 
 .kanvas-toolbar span {
   filter: drop-shadow(1px 1px 1px darkslategray);
 }
 
+.kanvas-footer.active {
+  min-height: calc(2 * var(--kanvas-size));
+  max-height: calc(2 * var(--kanvas-size));
+}
+
 .kanvas-footer {
-  position: fixed;
   z-index: 2;
-  bottom: 0;
-  top: unset;
+  background: rgba(60, 60, 60, 0.4);
+  padding-left: 0.5em;
+  width: 100%;
+  height: unset;
+  overflow: hidden;
 }
 
 .kanvas-overlay {
@@ -560,9 +567,7 @@
 }
 
 .kanvas-text.active {
-  display: inline;
-  opacity: 0.75;
-  animation: kanvas-fade-in 1.0s ease-in forwards;
+  animation: kanvas-fade-in 0.5s ease-in forwards;
 }
 
 .kanvas-settings {
@@ -652,6 +657,16 @@
 
   100% {
     opacity: 0.75;
+  }
+}
+
+@keyframes kanvas-fade-out {
+  0% {
+    opacity: 0.75;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 

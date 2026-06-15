@@ -166,12 +166,9 @@ export default class Kanvas {
     this.pan.moving = false;
     this.selected = node;
     const nodeType = this.selected.getClassName();
-    if (nodeType === 'Image') {
-      this.helpers.showMessage(
-        `Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`,
-      );
-    } else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${(this.selected as Konva.Line).points().length / 2}`);
-    else if (nodeType === 'Text') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    if (nodeType === 'Image') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x:${Math.round(this.selected.x())} y:${Math.round(this.selected.y())} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
+    else if (nodeType === 'Line') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points:${(this.selected as Konva.Line).points().length / 2}`);
+    else if (nodeType === 'Text') this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
 
     this.layer.find('Transformer').forEach((t) => t.destroy());
@@ -214,13 +211,11 @@ export default class Kanvas {
     this.paint.stopPaint();
   }
 
-  notifyImage() {
+  notifyImage() { // eslint-disable-line class-methods-use-this
     const kanvasChangeButton = 'kanvas-change-button';
     const btn = document.getElementById(kanvasChangeButton);
-    if (btn) {
-      this.log(`Notify width=${this.stage.width()} height=${this.stage.height()}`);
-      btn.click();
-    }
+    // this.log(`Notify width=${this.stage.width()} height=${this.stage.height()}`);
+    if (btn) btn.click();
   }
 
   addImage(url: string) {
@@ -272,7 +267,7 @@ export default class Kanvas {
     const result = { kanvas: true, image: null as string | null, mask: null as string | null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
-    this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
+    // this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     if (imageOnly) return result.image;
     return result;
   }

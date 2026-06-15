@@ -11677,7 +11677,7 @@ var html = `
   </div>
   <div class="kanvas-settings-row">
     <label for="kanvas-settings-max-size">Max canvas size</label>
-    <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="8192" value="2048" />
+    <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="16384" value="4096" />
   </div>
   <div class="kanvas-settings-row">
     <label for="kanvas-settings-brush-size">Brush size</label>
@@ -11707,9 +11707,9 @@ var Settings = class _Settings {
     brushSize: 20,
     outpaintFill: false,
     zoomLock: false,
-    maxSize: 2048,
+    maxSize: 4096,
     messageShow: true,
-    messageTimeout: 5e3
+    debounceMessage: 2500
   };
   constructor(k) {
     this.k = k;
@@ -11720,7 +11720,18 @@ var Settings = class _Settings {
     this.el.innerHTML = html;
     this.bindLiveControls();
   }
-  defaults = { allowHide: true, toolbarSize: 18, toolbarColor: 190, overlayWidth: 240, brushSize: 20, outpaintFill: false, zoomLock: false, maxSize: 2048, messageShow: true, messageTimeout: 5e3 };
+  defaults = {
+    allowHide: true,
+    toolbarSize: 18,
+    toolbarColor: 190,
+    overlayWidth: 240,
+    brushSize: 20,
+    outpaintFill: false,
+    zoomLock: false,
+    maxSize: 4096,
+    messageShow: true,
+    debounceMessage: 2500
+  };
   resetSettings() {
     Object.assign(this.settings, this.defaults);
     this.saveSettings();
@@ -11789,7 +11800,7 @@ var Settings = class _Settings {
     bind("kanvas-settings-message-timeout", (el) => {
       const v = parseInt(el.value, 10);
       if (!Number.isNaN(v)) {
-        this.settings.messageTimeout = v;
+        this.settings.debounceMessage = v;
         this.saveSettings();
       }
     });
@@ -11830,7 +11841,7 @@ var Settings = class _Settings {
     this.el.querySelector("#kanvas-settings-overlay-width").value = String(this.settings.overlayWidth);
     this.el.querySelector("#kanvas-settings-zoom-lock").checked = this.settings.zoomLock;
     this.el.querySelector("#kanvas-settings-message-show").checked = this.settings.messageShow;
-    this.el.querySelector("#kanvas-settings-message-timeout").value = String(this.settings.messageTimeout);
+    this.el.querySelector("#kanvas-settings-message-timeout").value = String(this.settings.debounceMessage);
     this.el.querySelector("#kanvas-settings-brush-size").value = String(this.settings.brushSize);
     this.el.querySelector("#kanvas-settings-outpaint-fill").checked = this.settings.outpaintFill;
     this.el.querySelector("#kanvas-settings-max-size").value = String(this.settings.maxSize);
@@ -11846,6 +11857,7 @@ var Settings = class _Settings {
 };
 
 // src/Helpers.ts
+var debounceMessage;
 var Helpers = class {
   k;
   constructor(k) {
@@ -11861,16 +11873,21 @@ var Helpers = class {
     if (typeof log !== "undefined") log("Kanvas:", message);
     else console.log("Kanvas:", message);
   }
-  async showMessage(msg, duration = this.k.settings.settings.messageTimeout) {
+  async showMessage(msg, duration = this.k.settings.settings.debounceMessage) {
     this.kanvasLog(msg);
+    const footerEl = document.getElementById(`${this.k.containerId}-footer`);
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
-    if (!msgEl || !this.k.settings.settings.messageShow) return;
-    msgEl.classList.remove("fade-out");
-    msgEl.innerHTML = '<span class="kanvas-separator"> | </span>' + msg;
+    if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
+    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + msg;
+    else msgEl.innerHTML = msg;
     msgEl.classList.add("active");
-    setTimeout(() => {
+    footerEl.classList.add("active");
+    if (debounceMessage) clearTimeout(debounceMessage);
+    debounceMessage = setTimeout(() => {
       msgEl.classList.remove("active");
+      footerEl.classList.remove("active");
       msgEl.innerHTML = "";
+      debounceMessage = void 0;
     }, duration);
   }
   async bindStage() {
@@ -12066,7 +12083,6 @@ var Toolbar = class {
       size = e.deltaY > 0 ? size * 1.05 : size / 1.05;
       size = Math.min(Math.max(Math.round(10 * size) / 10, 10), 32);
       sizePx = `${size}px`;
-      this.k.helpers.showMessage(`Toolbar: scale=${sizePx}`);
       document.documentElement.style.setProperty("--kanvas-size", sizePx);
     };
     this.btnSelectImage = document.getElementById(`${this.k.containerId}-button-image`);
@@ -12079,7 +12095,7 @@ var Toolbar = class {
       this.k.group = this.k.imageGroup;
       this.btnSelectImage?.classList.add("active");
       this.btnSelectMask?.classList.remove("active");
-      this.k.helpers.showMessage("Active: image layer");
+      this.k.helpers.showMessage("Active layer: image");
       this.k.shapes.refresh();
     });
     this.btnSelectMask?.addEventListener("click", async (e) => {
@@ -12090,7 +12106,7 @@ var Toolbar = class {
       this.k.group = this.k.maskGroup;
       this.btnSelectImage?.classList.remove("active");
       this.btnSelectMask?.classList.add("active");
-      this.k.helpers.showMessage("Active: mask layer");
+      this.k.helpers.showMessage("Active layer: mask");
       this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener("input", async (e) => {
@@ -12241,7 +12257,7 @@ var Toolbar = class {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "resize";
-      this.k.helpers.showMessage("Image mode=resize");
+      this.k.helpers.showMessage("Resize");
       this.k.resize.startResize();
       this.resetButtons();
       this.btnResize?.classList.add("active");
@@ -12250,7 +12266,7 @@ var Toolbar = class {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = "crop";
-      this.k.helpers.showMessage("Image mode=crop");
+      this.k.helpers.showMessage("Crop");
       this.k.resize.startClip();
       this.resetButtons();
       this.btnCrop?.classList.add("active");
@@ -12267,7 +12283,7 @@ var Toolbar = class {
         this.k.imageMode = "none";
       } else {
         this.k.imageMode = "paint";
-        this.k.helpers.showMessage("Image mode=paint");
+        this.k.helpers.showMessage("Paint");
         this.k.paint.startPaint();
         this.resetButtons();
         this.btnPaint?.classList.add("active");
@@ -12285,7 +12301,7 @@ var Toolbar = class {
         this.k.imageMode = "none";
       } else {
         this.k.imageMode = "wand";
-        this.k.helpers.showMessage("Image mode=wand");
+        this.k.helpers.showMessage("Magic wand");
         this.k.paint.startWand();
         this.resetButtons();
         this.btnWand?.classList.add("active");
@@ -12305,7 +12321,7 @@ var Toolbar = class {
         this.k.imageMode = "none";
       } else {
         this.k.imageMode = "text";
-        this.k.helpers.showMessage("Image mode=text");
+        this.k.helpers.showMessage("Draw text");
         this.k.paint.startText();
         this.resetButtons();
         this.btnText?.classList.add("active");
@@ -12399,7 +12415,7 @@ var Toolbar = class {
         this.k.imageMode = "none";
       } else {
         this.k.imageMode = "filters";
-        this.k.helpers.showMessage("Image mode=filters");
+        this.k.helpers.showMessage("Filters");
         this.k.stopActions();
         this.resetButtons();
         this.btnFilters?.classList.add("active");
@@ -12434,13 +12450,14 @@ var Toolbar = class {
 // src/Upload.ts
 var Upload = class {
   k;
-  opacityDebounce = 0;
+  debounceOpacity = void 0;
   constructor(k) {
     this.k = k;
   }
   async setStageResolutionToImage(image) {
     const width = Math.max(1, image.width());
     const height = Math.max(1, image.height());
+    if (width === this.k.stage.width() && height === this.k.stage.height()) return;
     this.k.stage.size({ width, height });
     this.k.stages.resizeActiveStageLayers(width, height);
     this.k.stages.syncActiveLayerRefs();
@@ -12448,7 +12465,6 @@ var Upload = class {
     this.k.resize.updateSizeInputs();
     this.k.resize.fitStage();
     this.k.stages.renderOverlay();
-    this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
   }
   async pasteImage(e = null) {
     let items = [];
@@ -12489,9 +12505,7 @@ var Upload = class {
         this.k.controls.style.display = "contents";
         this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
-        if (this.k.helpers.isEmpty()) {
-          await this.setStageResolutionToImage(image);
-        }
+        if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
           image.cache();
@@ -12538,11 +12552,9 @@ var Upload = class {
         image.name(file.name);
         if (this.k.selectedLayer === "image") this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Load ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
-        if (this.k.helpers.isEmpty()) {
-          await this.setStageResolutionToImage(image);
-        }
+        if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
         if (this.k.selectedLayer === "mask") {
           image.cache();
@@ -12553,7 +12565,7 @@ var Upload = class {
         image.on("dragmove", () => this.k.resize.resizeStageToFit(image));
         image.on("click", () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        await this.k.resize.resizeStageToFitNow(image);
+        await this.k.resize.resizeStageToFitNow(image, false, true);
         this.k.history.capture("Upload image");
         if (shouldNotify) this.k.onchange();
       };
@@ -12576,8 +12588,8 @@ var Upload = class {
     if (this.k.selected && this.k.selected instanceof lib_default.Image) {
       this.k.selected.opacity(opacity);
       this.k.layer.batchDraw();
-      clearTimeout(this.opacityDebounce);
-      this.opacityDebounce = window.setTimeout(() => this.k.history.capture("Opacity change"), 250);
+      clearTimeout(this.debounceOpacity);
+      this.debounceOpacity = setTimeout(() => this.k.history.capture("Opacity change"), 250);
     }
   }
 };
@@ -12587,9 +12599,9 @@ var Resize = class {
   k;
   clipBox;
   debounce = 200;
-  debounceFit = 0;
-  debounceResize = 0;
-  historyResizeDebounce = 0;
+  debounceFit = void 0;
+  debounceResize = void 0;
+  debounceHistory = void 0;
   scale = 1;
   lastZoomPercent = -1;
   constructor(k) {
@@ -12603,9 +12615,7 @@ var Resize = class {
     const stageWidth = this.k.stage.width();
     const stageHeight = this.k.stage.height();
     if (stageWidth <= 0 || stageHeight <= 0) return;
-    if (this.k.helpers.isEmpty()) {
-      this.k.wrapper.style.overflow = "hidden";
-    }
+    if (this.k.helpers.isEmpty()) this.k.wrapper.style.overflow = "hidden";
     if (this.k.settings.settings.zoomLock) {
       this.k.wrapper.style.overflow = "auto";
       this.scale = 1;
@@ -12625,27 +12635,20 @@ var Resize = class {
     });
     const kanvasEl = document.getElementById(`${this.k.containerId}-kanvas`);
     if (kanvasEl && !this.k.helpers.isEmpty()) {
-      if (el.clientWidth > stageWidth * this.scale) {
-        kanvasEl.style.marginLeft = `${(el.clientWidth - stageWidth * this.scale) / 2}px`;
-      } else {
-        kanvasEl.style.marginLeft = "0px";
-      }
+      if (el.clientWidth > stageWidth * this.scale) kanvasEl.style.marginLeft = `${(el.clientWidth - stageWidth * this.scale) / 2}px`;
+      else kanvasEl.style.marginLeft = "0px";
       this.k.wrapper.style.setProperty("--kanvas-canvas-height", `${stageHeight * this.scale}px`);
     }
-    if (stageHeight > 128) {
-      this.k.container.style.height = `${stageHeight}px`;
-    } else {
-      this.k.container.style.height = "unset";
-    }
+    if (stageHeight > 128) this.k.container.style.height = `${stageHeight}px`;
+    else this.k.container.style.height = "unset";
     const zoomPercent = Math.round(this.scale * 100);
     if (!this.k.helpers.isEmpty() && zoomPercent !== this.lastZoomPercent) {
       this.lastZoomPercent = zoomPercent;
-      this.k.helpers.showMessage(`Zoom: ${zoomPercent}%`);
     }
   }
   async fitStage(el = this.k.wrapper) {
     clearTimeout(this.debounceFit);
-    this.debounceFit = window.setTimeout(() => this._fitStage(el), this.debounce);
+    this.debounceFit = setTimeout(() => this._fitStage(el), this.debounce);
   }
   async updateSizeInputs() {
     const widthInput = document.getElementById(`${this.k.containerId}-image-width`);
@@ -12655,7 +12658,7 @@ var Resize = class {
       heightInput.value = String(Math.round(this.k.stage.height()));
     }
   }
-  async _resizeStage(el, force = false) {
+  async _resizeStage(el, force = false, quiet = false) {
     const box = el.getClientRect();
     const width = this.k.stage.width();
     const height = this.k.stage.height();
@@ -12669,11 +12672,11 @@ var Resize = class {
       if (box.width < width) this.k.stage.width(box.width);
       if (box.height < height) this.k.stage.height(box.height);
       for (const child of el.getChildren()) child.setPosition({ x: 0, y: 0 });
-      this.k.helpers.showMessage(`Resize group: x=${Math.round(box.x)} y=${Math.round(box.y)} width=${Math.round(box.width)} height=${Math.round(box.height)}`);
-    } else {
+      if (!quiet) this.k.helpers.showMessage(`Resize group: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+    } else if (box.x + box.width > this.k.stage.width() || box.y + box.height > this.k.stage.height()) {
       if (box.x + box.width > this.k.stage.width()) this.k.stage.width(box.x + box.width);
       if (box.y + box.height > this.k.stage.height()) this.k.stage.height(box.y + box.height);
-      this.k.helpers.showMessage(`Resize image: x=${Math.round(box.x)} y=${Math.round(box.y)} width=${Math.round(box.width)} height=${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(`Resize image: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
     }
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
       const primary = document.querySelector(".konvajs-content canvas:first-of-type");
@@ -12692,7 +12695,7 @@ var Resize = class {
       this.k.stage.size({ width: x, height: y });
       this.k.stages.resizeActiveStageLayers(x, y);
       this.k.toolbar.el.style.maxWidth = `${x}px`;
-      this.k.helpers.showMessage(`Stage: width=${width} height=${height} max=${this.k.settings.settings.maxSize}`);
+      if (!quiet) this.k.helpers.showMessage(`Stage: width:${width} height:${height} max:${this.k.settings.settings.maxSize}`);
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
@@ -12701,25 +12704,27 @@ var Resize = class {
   }
   async resizeStageToFit(el, force = false) {
     clearTimeout(this.debounceResize);
-    this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
+    this.debounceResize = setTimeout(() => this._resizeStage(el, force), this.debounce);
   }
-  async resizeStageToFitNow(el, force = false) {
+  async resizeStageToFitNow(el, force = false, quiet = false) {
     clearTimeout(this.debounceResize);
-    await this._resizeStage(el, force);
+    await this._resizeStage(el, force, quiet);
   }
   async resizeStage(width, height) {
-    if (!this.k || !this.k.stage) return;
+    if (width < 64 || height < 64) return;
+    if (width > this.k.settings.settings.maxSize || height > this.k.settings.settings.maxSize) return;
+    if (width === this.k.stage.width() && height === this.k.stage.height()) return;
     this.k.stage.width(width);
     this.k.stage.height(height);
     this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
     this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
     this.updateSizeInputs();
-    this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
+    this.k.helpers.showMessage(`Stage resize: width:${width} height:${height}`);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
-    clearTimeout(this.historyResizeDebounce);
-    this.historyResizeDebounce = window.setTimeout(() => this.k.history.capture("Resize stage"), 250);
+    clearTimeout(this.debounceHistory);
+    this.debounceHistory = setTimeout(() => this.k.history.capture("Resize stage"), 250);
   }
   startResize() {
     this.k.stopActions();
@@ -13133,7 +13138,7 @@ var Paint = class {
         });
         const textSize = text.measureSize(textVal);
         if (textSize.height >= y1 - y0 || textSize.width >= x1 - x0) {
-          this.k.helpers.showMessage(`Text: "${textVal}" size=${fontSize}`);
+          this.k.helpers.showMessage(`Text: "${textVal}" size:${fontSize}`);
           this.k.group.add(text);
           text.on("click", () => this.k.selectNode(text));
           this.k.history.capture("Add text");
@@ -13290,7 +13295,7 @@ var Outpaint = class {
       return;
     }
     this.k.imageMode = "outpaint";
-    this.k.helpers.showMessage(`Image mode=outpaint blur=${this.outpaintBlur} expand=${this.outpaintExpand}`);
+    this.k.helpers.showMessage(`Outpaint blur:${this.outpaintBlur} expand:${this.outpaintExpand}`);
     this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new lib_default.Rect({
@@ -13661,7 +13666,6 @@ var Footer = class {
     this.k = k;
     this.el = document.getElementById(`${this.k.containerId}-footer`);
     this.el.classList.add("kanvas-toolbar", "kanvas-footer");
-    this.el.classList.add("active");
     this.el.innerHTML = `
       <span class="kanvas-text" id="${this.k.containerId}-message"></span>
     `;
@@ -14320,12 +14324,9 @@ var Kanvas = class {
     this.pan.moving = false;
     this.selected = node;
     const nodeType = this.selected.getClassName();
-    if (nodeType === "Image") {
-      this.helpers.showMessage(
-        `Selected: ${nodeType}/${this.selectedLayer} x=${Math.round(this.selected.x())} y=${Math.round(this.selected.y())} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`
-      );
-    } else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points=${this.selected.points().length / 2}`);
-    else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width=${Math.round(this.selected.width())} height=${Math.round(this.selected.height())}`);
+    if (nodeType === "Image") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x:${Math.round(this.selected.x())} y:${Math.round(this.selected.y())} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
+    else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points:${this.selected.points().length / 2}`);
+    else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
     else this.helpers.showMessage(`Selected: ${nodeType}`);
     this.layer.find("Transformer").forEach((t) => t.destroy());
     if (nodeType !== "Image") {
@@ -14367,10 +14368,7 @@ var Kanvas = class {
   notifyImage() {
     const kanvasChangeButton = "kanvas-change-button";
     const btn = document.getElementById(kanvasChangeButton);
-    if (btn) {
-      this.log(`Notify width=${this.stage.width()} height=${this.stage.height()}`);
-      btn.click();
-    }
+    if (btn) btn.click();
   }
   addImage(url) {
     this.stopActions();
@@ -14414,7 +14412,6 @@ var Kanvas = class {
     const result = { kanvas: true, image: null, mask: null };
     if (imageData) result.image = imageData;
     if (maskData) result.mask = maskData;
-    this.helpers.showMessage(`Send item: ${stage.order} image: ${imageData ? imageData.length : 0} mask: ${maskData ? maskData.length : 0}`);
     if (imageOnly) return result.image;
     return result;
   }

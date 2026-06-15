@@ -375,7 +375,7 @@ export default class Paint {
         });
         const textSize = text.measureSize(textVal);
         if (textSize.height >= (y1 - y0) || textSize.width >= (x1 - x0)) {
-          this.k.helpers.showMessage(`Text: "${textVal}" size=${fontSize}`);
+          this.k.helpers.showMessage(`Text: "${textVal}" size:${fontSize}`);
           this.k.group.add(text);
           text.on('click', () => this.k.selectNode(text));
           this.k.history.capture('Add text');

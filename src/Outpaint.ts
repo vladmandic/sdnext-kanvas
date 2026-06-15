@@ -52,7 +52,7 @@ export default class Outpaint {
       return;
     }
     this.k.imageMode = 'outpaint';
-    this.k.helpers.showMessage(`Image mode=outpaint blur=${this.outpaintBlur} expand=${this.outpaintExpand}`);
+    this.k.helpers.showMessage(`Outpaint blur:${this.outpaintBlur} expand:${this.outpaintExpand}`);
     this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new Konva.Rect({
