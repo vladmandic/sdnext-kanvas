@@ -199,7 +199,7 @@ export default class History {
       else this.k.toolbar.btnSelectImage?.click();
 
       this.k.layer.find('Transformer').forEach((t) => t.destroy());
-      this.k.selected = null as Konva.Node;
+      this.k.selected = null;
       this.k.stage.batchDraw();
       this.k.shapes.refresh();
       this.k.stages.renderOverlay();

@@ -5,9 +5,9 @@ export default class Resize {
   k: Kanvas;
   clipBox: Konva.Rect | undefined;
   debounce = 200;
-  debounceFit = 0;
-  debounceResize = 0;
-  historyResizeDebounce = 0;
+  debounceFit: ReturnType<typeof setTimeout> | undefined = undefined;
+  debounceResize: ReturnType<typeof setTimeout> | undefined = undefined;
+  debounceHistory: ReturnType<typeof setTimeout> | undefined = undefined;
   scale = 1;
   lastZoomPercent = -1;
 
@@ -24,9 +24,7 @@ export default class Resize {
     const stageWidth = this.k.stage.width();
     const stageHeight = this.k.stage.height();
     if (stageWidth <= 0 || stageHeight <= 0) return;
-    if (this.k.helpers.isEmpty()) {
-      this.k.wrapper.style.overflow = 'hidden';
-    }
+    if (this.k.helpers.isEmpty()) this.k.wrapper.style.overflow = 'hidden';
     if (this.k.settings.settings.zoomLock) {
       this.k.wrapper.style.overflow = 'auto';
       this.scale = 1;
@@ -45,29 +43,23 @@ export default class Resize {
     });
     const kanvasEl = document.getElementById(`${this.k.containerId}-kanvas`);
     if (kanvasEl && !this.k.helpers.isEmpty()) {
-      if (el.clientWidth > stageWidth * this.scale) {
-        kanvasEl.style.marginLeft = `${(el.clientWidth - stageWidth * this.scale) / 2}px`;
-      } else {
-        kanvasEl.style.marginLeft = '0px';
-      }
+      if (el.clientWidth > stageWidth * this.scale) kanvasEl.style.marginLeft = `${(el.clientWidth - stageWidth * this.scale) / 2}px`;
+      else kanvasEl.style.marginLeft = '0px';
       this.k.wrapper.style.setProperty('--kanvas-canvas-height', `${stageHeight * this.scale}px`);
     }
-    if (stageHeight > 128) {
-      this.k.container.style.height = `${stageHeight}px`; // resize container element
-    } else {
-      this.k.container.style.height = 'unset';
-    }
+    if (stageHeight > 128) this.k.container.style.height = `${stageHeight}px`; // resize container element
+    else this.k.container.style.height = 'unset';
     const zoomPercent = Math.round(this.scale * 100);
     if (!this.k.helpers.isEmpty() && zoomPercent !== this.lastZoomPercent) {
       this.lastZoomPercent = zoomPercent;
-      this.k.helpers.showMessage(`Zoom: ${zoomPercent}%`);
+      // this.k.helpers.showMessage(`Zoom: ${zoomPercent}%`);
     }
   }
 
   async fitStage(el: HTMLElement = this.k.wrapper) {
     // this._fitStage(el);
     clearTimeout(this.debounceFit);
-    this.debounceFit = window.setTimeout(() => this._fitStage(el), this.debounce);
+    this.debounceFit = setTimeout(() => this._fitStage(el), this.debounce);
   }
 
   async updateSizeInputs() {
@@ -79,7 +71,7 @@ export default class Resize {
     }
   }
 
-  async _resizeStage(el: Konva.Image | Konva.Group, force = false) {
+  async _resizeStage(el: Konva.Image | Konva.Group, force = false, quiet = false) {
     const box = el.getClientRect();
     const width = this.k.stage.width();
     const height = this.k.stage.height();
@@ -94,11 +86,11 @@ export default class Resize {
       if (box.width < width) this.k.stage.width(box.width);
       if (box.height < height) this.k.stage.height(box.height);
       for (const child of el.getChildren()) child.setPosition({ x: 0, y: 0 });
-      this.k.helpers.showMessage(`Resize group: x=${Math.round(box.x)} y=${Math.round(box.y)} width=${Math.round(box.width)} height=${Math.round(box.height)}`);
-    } else {
+      if (!quiet) this.k.helpers.showMessage(`Resize group: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+    } else if (box.x + box.width > this.k.stage.width() || box.y + box.height > this.k.stage.height()) {
       if (box.x + box.width > this.k.stage.width()) this.k.stage.width(box.x + box.width);
       if (box.y + box.height > this.k.stage.height()) this.k.stage.height(box.y + box.height);
-      this.k.helpers.showMessage(`Resize image: x=${Math.round(box.x)} y=${Math.round(box.y)} width=${Math.round(box.width)} height=${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(`Resize image: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
     }
     // resizing layers and toolbar
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
@@ -110,7 +102,6 @@ export default class Resize {
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
-      this.k.notifyImage();
     }
     // limit max size
     if ((this.k.stage.width() > this.k.settings.settings.maxSize) || (this.k.stage.height() > this.k.settings.settings.maxSize)) {
@@ -120,35 +111,39 @@ export default class Resize {
       this.k.stage.size({ width: x, height: y });
       this.k.stages.resizeActiveStageLayers(x, y);
       this.k.toolbar.el.style.maxWidth = `${x}px`;
-      this.k.helpers.showMessage(`Stage: width=${width} height=${height} max=${this.k.settings.settings.maxSize}`);
+      if (!quiet) this.k.helpers.showMessage(`Stage: width:${width} height:${height} max:${this.k.settings.settings.maxSize}`);
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
     }
+    this.k.notifyImage();
   }
 
   async resizeStageToFit(el: Konva.Image | Konva.Group, force = false) {
     clearTimeout(this.debounceResize);
-    this.debounceResize = window.setTimeout(() => this._resizeStage(el, force), this.debounce);
+    this.debounceResize = setTimeout(() => this._resizeStage(el, force), this.debounce);
   }
 
-  async resizeStageToFitNow(el: Konva.Image | Konva.Group, force = false) {
+  async resizeStageToFitNow(el: Konva.Image | Konva.Group, force = false, quiet = false) {
     clearTimeout(this.debounceResize);
-    await this._resizeStage(el, force);
+    await this._resizeStage(el, force, quiet);
   }
 
   async resizeStage(width: number, height: number) {
+    if (width < 64 || height < 64) return;
+    if (width > this.k.settings.settings.maxSize || height > this.k.settings.settings.maxSize) return;
+    if (width === this.k.stage.width() && height === this.k.stage.height()) return;
     this.k.stage.width(width);
     this.k.stage.height(height);
     this.k.stages.resizeActiveStageLayers(this.k.stage.width(), this.k.stage.height());
     this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
     this.updateSizeInputs();
-    this.k.helpers.showMessage(`Stage width=${width} height=${height} resized`);
+    this.k.helpers.showMessage(`Stage resize: width:${width} height:${height}`);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
-    clearTimeout(this.historyResizeDebounce);
-    this.historyResizeDebounce = window.setTimeout(() => this.k.history.capture('Resize stage'), 250);
+    clearTimeout(this.debounceHistory);
+    this.debounceHistory = setTimeout(() => this.k.history.capture('Resize stage'), 250);
   }
 
   startResize() {

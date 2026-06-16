@@ -176,7 +176,7 @@ export default class Toolbar {
       size = e.deltaY > 0 ? size * 1.05 : size / 1.05;
       size = Math.min(Math.max(Math.round(10 * size) / 10, 10), 32);
       sizePx = `${size}px`;
-      this.k.helpers.showMessage(`Toolbar: scale=${sizePx}`);
+      // this.k.helpers.showMessage(`Toolbar: scale:${sizePx}`);
       document.documentElement.style.setProperty('--kanvas-size', sizePx);
     };
     // group: image,mask,opacity
@@ -190,7 +190,7 @@ export default class Toolbar {
       this.k.group = this.k.imageGroup;
       this.btnSelectImage?.classList.add('active');
       this.btnSelectMask?.classList.remove('active');
-      this.k.helpers.showMessage('Active: image layer');
+      this.k.helpers.showMessage('Active layer: image');
       this.k.shapes.refresh();
     });
     this.btnSelectMask?.addEventListener('click', async (e) => {
@@ -201,7 +201,7 @@ export default class Toolbar {
       this.k.group = this.k.maskGroup;
       this.btnSelectImage?.classList.remove('active');
       this.btnSelectMask?.classList.add('active');
-      this.k.helpers.showMessage('Active: mask layer');
+      this.k.helpers.showMessage('Active layer: mask');
       this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener('input', async (e) => {
@@ -234,7 +234,7 @@ export default class Toolbar {
     this.btnRemove?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      this.k.removeNode(this.k.selected);
+      if (this.k.selected) this.k.removeNode(this.k.selected);
     });
     this.btnUndo?.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -262,13 +262,13 @@ export default class Toolbar {
     });
 
     // group: size inputs
-    const resizeFromInputs = async (evt) => {
+    const resizeFromInputs = async (evt: Event) => {
       evt.preventDefault();
       evt.stopPropagation();
       const widthInput = document.getElementById(`${this.k.containerId}-image-width`) as HTMLInputElement;
       const heightInput = document.getElementById(`${this.k.containerId}-image-height`) as HTMLInputElement;
-      const width = parseInt((widthInput).value, 10);
-      const height = parseInt((heightInput).value, 10);
+      const width = parseInt(widthInput.value, 10);
+      const height = parseInt(heightInput.value, 10);
       this.k.resize.resizeStage(width, height);
     };
     document.getElementById(`${this.k.containerId}-image-width`)?.addEventListener('input', async (e) => resizeFromInputs(e));
@@ -367,7 +367,7 @@ export default class Toolbar {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'resize';
-      this.k.helpers.showMessage('Image mode=resize');
+      this.k.helpers.showMessage('Resize');
       this.k.resize.startResize();
       this.resetButtons();
       this.btnResize?.classList.add('active');
@@ -376,7 +376,7 @@ export default class Toolbar {
       e.preventDefault();
       e.stopPropagation();
       this.k.imageMode = 'crop';
-      this.k.helpers.showMessage('Image mode=crop');
+      this.k.helpers.showMessage('Crop');
       this.k.resize.startClip();
       this.resetButtons();
       this.btnCrop?.classList.add('active');
@@ -395,7 +395,7 @@ export default class Toolbar {
         this.k.imageMode = 'none';
       } else {
         this.k.imageMode = 'paint';
-        this.k.helpers.showMessage('Image mode=paint');
+        this.k.helpers.showMessage('Paint');
         this.k.paint.startPaint();
         this.resetButtons();
         this.btnPaint?.classList.add('active');
@@ -413,7 +413,7 @@ export default class Toolbar {
         this.k.imageMode = 'none';
       } else {
         this.k.imageMode = 'wand';
-        this.k.helpers.showMessage('Image mode=wand');
+        this.k.helpers.showMessage('Magic wand');
         this.k.paint.startWand();
         this.resetButtons();
         this.btnWand?.classList.add('active');
@@ -433,7 +433,7 @@ export default class Toolbar {
         this.k.imageMode = 'none';
       } else {
         this.k.imageMode = 'text';
-        this.k.helpers.showMessage('Image mode=text');
+        this.k.helpers.showMessage('Draw text');
         this.k.paint.startText();
         this.resetButtons();
         this.btnText?.classList.add('active');
@@ -531,7 +531,7 @@ export default class Toolbar {
         this.k.imageMode = 'none';
       } else {
         this.k.imageMode = 'filters';
-        this.k.helpers.showMessage('Image mode=filters');
+        this.k.helpers.showMessage('Filters');
         this.k.stopActions();
         this.resetButtons();
         this.btnFilters?.classList.add('active');

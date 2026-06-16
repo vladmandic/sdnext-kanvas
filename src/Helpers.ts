@@ -1,5 +1,7 @@
 import type Kanvas from './Kanvas';
 
+let debounceMessage: ReturnType<typeof setTimeout> | undefined;
+
 export default class Helpers {
   k: Kanvas;
   constructor(k: Kanvas) {
@@ -16,19 +18,25 @@ export default class Helpers {
   async kanvasLog(message: string) { // eslint-disable-line class-methods-use-this
     // @ts-ignore
     if (typeof log !== 'undefined') log('Kanvas:', message);
-    else console.log('Kanvas:', message); // eslint-disable-line no-console
+    else console.log('Kanvas:', message);
   }
 
-  async showMessage(msg: string, duration = this.k.settings.settings.messageTimeout) {
+  async showMessage(msg: string, duration = this.k.settings.settings.debounceMessage) {
     this.kanvasLog(msg);
+    const footerEl = document.getElementById(`${this.k.containerId}-footer`);
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
-    if (!msgEl || !this.k.settings.settings.messageShow) return;
-    msgEl.classList.remove('fade-out');
-    msgEl.innerHTML = '<span class="kanvas-separator"> | </span>' + msg;
+    if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
+    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + msg;
+    else msgEl.innerHTML = msg;
+    // msgEl.innerHTML = msg;
     msgEl.classList.add('active');
-    setTimeout(() => {
+    footerEl.classList.add('active');
+    if (debounceMessage) clearTimeout(debounceMessage);
+    debounceMessage = setTimeout(() => {
       msgEl.classList.remove('active');
+      footerEl.classList.remove('active');
       msgEl.innerHTML = '';
+      debounceMessage = undefined;
     }, duration);
   }
 

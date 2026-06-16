@@ -3,7 +3,7 @@ import type Kanvas from './Kanvas';
 
 export default class Upload {
   k: Kanvas;
-  opacityDebounce = 0;
+  debounceOpacity: ReturnType<typeof setTimeout> | undefined = undefined;
   constructor(k: Kanvas) {
     this.k = k;
   }
@@ -11,6 +11,7 @@ export default class Upload {
   private async setStageResolutionToImage(image: Konva.Image) {
     const width = Math.max(1, image.width());
     const height = Math.max(1, image.height());
+    if (width === this.k.stage.width() && height === this.k.stage.height()) return;
     this.k.stage.size({ width, height });
     this.k.stages.resizeActiveStageLayers(width, height);
     this.k.stages.syncActiveLayerRefs();
@@ -18,7 +19,7 @@ export default class Upload {
     this.k.resize.updateSizeInputs();
     this.k.resize.fitStage();
     this.k.stages.renderOverlay();
-    this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
+    // this.k.helpers.showMessage(`Resize stage: ${width} x ${height}`);
   }
 
   async pasteImage(e: ClipboardEvent | null = null) {
@@ -60,9 +61,7 @@ export default class Upload {
         this.k.controls.style.display = 'contents';
         this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
-        if (this.k.helpers.isEmpty()) {
-          await this.setStageResolutionToImage(image);
-        }
+        if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
         if (this.k.selectedLayer === 'mask') {
           image.cache();
@@ -83,16 +82,19 @@ export default class Upload {
     }
   }
 
-  async uploadImage(e) {
+  async uploadImage(e: DragEvent | Event) {
     e.preventDefault();
     this.k.stopActions();
     this.k.toolbar.resetButtons();
-    const files = Array.from(e.dataTransfer?.files || e.target?.files || []);
+    const files = Array.from(
+      (e as DragEvent).dataTransfer?.files
+      ?? ((e.target as HTMLInputElement | null)?.files ?? []),
+    );
     // const rect = this.k.stage.container().getBoundingClientRect();
     // const dropX = this.k.helpers.isEmpty() ? 0 : (e.clientX || 0) - rect.left;
     // const dropY = this.k.helpers.isEmpty() ? 0 : (e.clientY || 0) - rect.top;
     const shouldNotify = !this.k.imageGroup.hasChildren();
-    for (const file of files as File[]) {
+    for (const file of files) {
       if (!file.type.startsWith('image/')) continue;
       const url = URL.createObjectURL(file);
       const dropImage = new Image();
@@ -111,11 +113,9 @@ export default class Upload {
         image.name(file.name);
         if (this.k.selectedLayer === 'image') this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Loaded ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage(`Load ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
         URL.revokeObjectURL(url);
-        if (this.k.helpers.isEmpty()) {
-          await this.setStageResolutionToImage(image);
-        }
+        if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
         if (this.k.selectedLayer === 'mask') {
           image.cache();
@@ -126,7 +126,7 @@ export default class Upload {
         image.on('dragmove', () => this.k.resize.resizeStageToFit(image));
         image.on('click', () => this.k.selectNode(image));
         this.k.stage.batchDraw();
-        await this.k.resize.resizeStageToFitNow(image);
+        await this.k.resize.resizeStageToFitNow(image, false, true);
         this.k.history.capture('Upload image');
         if (shouldNotify) this.k.onchange();
       };
@@ -151,8 +151,8 @@ export default class Upload {
     if (this.k.selected && this.k.selected instanceof Konva.Image) {
       this.k.selected.opacity(opacity);
       this.k.layer.batchDraw();
-      clearTimeout(this.opacityDebounce);
-      this.opacityDebounce = window.setTimeout(() => this.k.history.capture('Opacity change'), 250);
+      clearTimeout(this.debounceOpacity);
+      this.debounceOpacity = setTimeout(() => this.k.history.capture('Opacity change'), 250);
     }
   }
 }

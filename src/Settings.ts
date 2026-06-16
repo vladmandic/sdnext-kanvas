@@ -24,7 +24,7 @@ const html = `
   </div>
   <div class="kanvas-settings-row">
     <label for="kanvas-settings-max-size">Max canvas size</label>
-    <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="8192" value="2048" />
+    <input type="number" id="kanvas-settings-max-size" name="kanvas-settings-max-size" min="256" max="16384" value="4096" />
   </div>
   <div class="kanvas-settings-row">
     <label for="kanvas-settings-brush-size">Brush size</label>
@@ -55,9 +55,9 @@ export default class Settings {
     brushSize: 20,
     outpaintFill: false,
     zoomLock: false,
-    maxSize: 2048,
+    maxSize: 4096,
     messageShow: true,
-    messageTimeout: 5000,
+    debounceMessage: 2500,
   };
 
   constructor(k: Kanvas) {
@@ -70,7 +70,18 @@ export default class Settings {
     this.bindLiveControls();
   }
 
-  readonly defaults = { allowHide: true, toolbarSize: 18, toolbarColor: 190, overlayWidth: 240, brushSize: 20, outpaintFill: false, zoomLock: false, maxSize: 2048, messageShow: true, messageTimeout: 5000 };
+  readonly defaults = {
+    allowHide: true,
+    toolbarSize: 18,
+    toolbarColor: 190,
+    overlayWidth: 240,
+    brushSize: 20,
+    outpaintFill: false,
+    zoomLock: false,
+    maxSize: 4096,
+    messageShow: true,
+    debounceMessage: 2500,
+  };
 
   resetSettings() {
     Object.assign(this.settings, this.defaults);
@@ -142,7 +153,7 @@ export default class Settings {
     bind('kanvas-settings-message-timeout', (el) => {
       const v = parseInt(el.value, 10);
       if (!Number.isNaN(v)) {
-        this.settings.messageTimeout = v;
+        this.settings.debounceMessage = v;
         this.saveSettings();
       }
     });
@@ -166,8 +177,10 @@ export default class Settings {
     if (window.localStorage) {
       const raw = window.localStorage.getItem('sdnext-kanvas');
       const data = raw ? JSON.parse(raw) : {};
-      for (const key in this.settings) {
-        if (data[key] !== undefined) this.settings[key] = data[key];
+      const typedSettings = this.settings as Record<keyof typeof this.settings, unknown>;
+      for (const key of Object.keys(this.settings) as (keyof typeof this.settings)[]) {
+        const value = data[key];
+        if (value !== undefined) typedSettings[key] = value;
       }
     }
     this.saveSettings();
@@ -186,7 +199,7 @@ export default class Settings {
     (this.el.querySelector('#kanvas-settings-overlay-width') as HTMLInputElement).value = String(this.settings.overlayWidth);
     (this.el.querySelector('#kanvas-settings-zoom-lock') as HTMLInputElement).checked = this.settings.zoomLock;
     (this.el.querySelector('#kanvas-settings-message-show') as HTMLInputElement).checked = this.settings.messageShow;
-    (this.el.querySelector('#kanvas-settings-message-timeout') as HTMLInputElement).value = String(this.settings.messageTimeout);
+    (this.el.querySelector('#kanvas-settings-message-timeout') as HTMLInputElement).value = String(this.settings.debounceMessage);
     (this.el.querySelector('#kanvas-settings-brush-size') as HTMLInputElement).value = String(this.settings.brushSize);
     (this.el.querySelector('#kanvas-settings-outpaint-fill') as HTMLInputElement).checked = this.settings.outpaintFill;
     (this.el.querySelector('#kanvas-settings-max-size') as HTMLInputElement).value = String(this.settings.maxSize);

@@ -34,6 +34,7 @@ async function initKanvas() {
   window.kanvas = kanvasInstance; // expose to global
   window.getKanvasData = getKanvasData; // expose to global
   window.loadFromURL = loadFromURL; // expose to global
+  window.resizeStage = (width, height) => kanvasInstance.resize.resizeStage(width, height);
 }
 
 onUiReady(initKanvas); // eslint-disable-line no-undef
