@@ -35,7 +35,7 @@
     "@html-eslint/eslint-plugin": "^0.60.0",
     "@types/node": "^25.9.0",
     "@vladmandic/build": "^0.10.3",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^9.39.3",
     "eslint-config-airbnb-extended": "^3.1.0",
     "eslint-plugin-promise": "^7.3.0",
