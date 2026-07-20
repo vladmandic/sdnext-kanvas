@@ -181,9 +181,9 @@ export default class Stages {
       alignRight.appendChild(order);
 
       const remove = document.createElement('span');
-      remove.className = 'kanvas-button kanvas-stage-remove';
+      remove.className = 'kanvas-shapes-item-remove';
       remove.title = `Delete ${stage.label}`;
-      remove.textContent = '\uf2d3';
+      remove.textContent = 'x';
       remove.addEventListener('click', (evt) => {
         evt.preventDefault();
         evt.stopPropagation();

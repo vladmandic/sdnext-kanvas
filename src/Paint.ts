@@ -79,6 +79,18 @@ export default class Paint {
     this.brushSize = this.k.settings.settings.brushSize;
   }
 
+  getStagePointerPosition() {
+    const pointer = this.k.stage.getPointerPosition();
+    if (!pointer) return null;
+    const { x, y } = pointer;
+    const fitScale = this.k.resize.scale || 1;
+    const zoomScale = this.k.stage.scaleX() || 1;
+    return {
+      x: x / fitScale / zoomScale,
+      y: y / fitScale / zoomScale,
+    };
+  }
+
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
@@ -91,11 +103,10 @@ export default class Paint {
       }
       this.isPainting = true;
       this.k.stages.syncActiveLayerRefs();
-      const pos = this.k.stage.getPointerPosition();
+      const pos = this.getStagePointerPosition();
       const brushColor = this.k.selectedLayer === 'image' ? this.k.paint.brushColor : hexToGrayscale(this.k.paint.brushColor);
       if (!pos) return;
-      const x = pos.x / this.k.resize.scale;
-      const y = pos.y / this.k.resize.scale;
+      const { x, y } = pos;
       const newLine = new Konva.Line({
         stroke: brushColor,
         strokeWidth: 2 * this.k.paint.brushSize,
@@ -121,11 +132,10 @@ export default class Paint {
       if (this.k.imageMode !== 'paint') return;
       if (!this.isPainting) return;
       e.evt.preventDefault();
-      const pos = this.k.stage.getPointerPosition();
+      const pos = this.getStagePointerPosition();
       const lastLine = this.lines[this.lines.length - 1];
       if (!pos || !lastLine) return;
-      const x = pos.x / this.k.resize.scale;
-      const y = pos.y / this.k.resize.scale;
+      const { x, y } = pos;
       const newPoints = lastLine.points().concat([x, y]);
       lastLine.points(newPoints);
     });
@@ -258,10 +268,10 @@ export default class Paint {
     if (!this.wandCache) return;
     const now = Date.now();
     if (!force && (now - this.wandLastAt) < this.wandThrottleMs) return;
-    const pos = this.k.stage.getPointerPosition();
+    const pos = this.getStagePointerPosition();
     if (!pos) return;
-    const x = Math.round(pos.x / this.k.resize.scale);
-    const y = Math.round(pos.y / this.k.resize.scale);
+    const x = Math.round(pos.x);
+    const y = Math.round(pos.y);
     if (this.applyWandAt(x, y)) this.wandCapturePending = true;
     this.wandLastAt = now;
   }
@@ -342,23 +352,23 @@ export default class Paint {
     let pos1: Konva.Vector2d | null;
     this.k.stage.on('mousedown.text touchstart.text', () => {
       if (!isText) return;
-      pos0 = this.k.stage.getPointerPosition();
+      pos0 = this.getStagePointerPosition();
       pos1 = null;
     });
     this.k.stage.on('mouseup.text touchend.text', () => {
       if (!isText) return;
       const textVal = this.k.paint.textValue + ' ';
       if (!textVal || textVal.trim() === '') return;
-      pos1 = this.k.stage.getPointerPosition();
+      pos1 = this.getStagePointerPosition();
       if (!pos0 || !pos1) return;
       this.k.toolbar.resetButtons();
       let fontSize = 4;
       const maxFontSize = 500;
       while (fontSize < maxFontSize) {
-        const x0 = Math.min(pos0.x, pos1.x) / this.k.resize.scale;
-        const y0 = Math.min(pos0.y, pos1.y) / this.k.resize.scale;
-        const x1 = Math.max(pos0.x, pos1.x) / this.k.resize.scale;
-        const y1 = Math.max(pos0.y, pos1.y) / this.k.resize.scale;
+        const x0 = Math.min(pos0.x, pos1.x);
+        const y0 = Math.min(pos0.y, pos1.y);
+        const x1 = Math.max(pos0.x, pos1.x);
+        const y1 = Math.max(pos0.y, pos1.y);
         const text = new Konva.Text({
           x: x0,
           y: y0,
