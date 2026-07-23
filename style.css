@@ -151,6 +151,10 @@
 }
 
 .kanvas-shapes-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
   font-family: var(--kanvas-font);
   font-size: 0.76em;
   text-align: left;
@@ -162,8 +166,29 @@
   cursor: pointer;
 }
 
+.kanvas-shapes-item-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.kanvas-shapes-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 1.5em;
+  border-radius: var(--kanvas-radius);
+  padding: 0.1em 0.35em;
+  color: hsl(var(--kanvas-color), 0%, 88%);
+  background: hsl(var(--kanvas-color), 20%, 20%);
+}
+
 .kanvas-shapes-item:hover {
   background: hsl(var(--kanvas-color), 45%, 28%);
+}
+
+.kanvas-shapes-item-remove:hover {
+  background: hsl(var(--kanvas-color), 55%, 30%);
 }
 
 .kanvas-shapes-item.active {
@@ -334,18 +359,6 @@
   position: absolute;
   top: 0.35em;
   right: 2.7em;
-}
-
-.kanvas-stage-remove {
-  position: absolute;
-  top: 0.35em;
-  right: 0.35em;
-  font-size: 1.6em;
-  background-color: rgba(0, 0, 0, 0.4);
-  align-items: center;
-  z-index: 2;
-  pointer-events: auto;
-  padding: 0 !important;
 }
 
 .kanvas-stage-heading:hover {

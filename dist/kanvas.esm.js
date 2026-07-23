@@ -12861,6 +12861,17 @@ var Paint = class {
     this.k = k;
     this.brushSize = this.k.settings.settings.brushSize;
   }
+  getStagePointerPosition() {
+    const pointer = this.k.stage.getPointerPosition();
+    if (!pointer) return null;
+    const { x, y } = pointer;
+    const fitScale = this.k.resize.scale || 1;
+    const zoomScale = this.k.stage.scaleX() || 1;
+    return {
+      x: x / fitScale / zoomScale,
+      y: y / fitScale / zoomScale
+    };
+  }
   startPaint() {
     this.k.stopActions();
     this.isPainting = true;
@@ -12873,11 +12884,10 @@ var Paint = class {
       }
       this.isPainting = true;
       this.k.stages.syncActiveLayerRefs();
-      const pos = this.k.stage.getPointerPosition();
+      const pos = this.getStagePointerPosition();
       const brushColor = this.k.selectedLayer === "image" ? this.k.paint.brushColor : hexToGrayscale(this.k.paint.brushColor);
       if (!pos) return;
-      const x = pos.x / this.k.resize.scale;
-      const y = pos.y / this.k.resize.scale;
+      const { x, y } = pos;
       const newLine = new lib_default.Line({
         stroke: brushColor,
         strokeWidth: 2 * this.k.paint.brushSize,
@@ -12903,11 +12913,10 @@ var Paint = class {
       if (this.k.imageMode !== "paint") return;
       if (!this.isPainting) return;
       e.evt.preventDefault();
-      const pos = this.k.stage.getPointerPosition();
+      const pos = this.getStagePointerPosition();
       const lastLine = this.lines[this.lines.length - 1];
       if (!pos || !lastLine) return;
-      const x = pos.x / this.k.resize.scale;
-      const y = pos.y / this.k.resize.scale;
+      const { x, y } = pos;
       const newPoints = lastLine.points().concat([x, y]);
       lastLine.points(newPoints);
     });
@@ -13026,10 +13035,10 @@ var Paint = class {
     if (!this.wandCache) return;
     const now2 = Date.now();
     if (!force && now2 - this.wandLastAt < this.wandThrottleMs) return;
-    const pos = this.k.stage.getPointerPosition();
+    const pos = this.getStagePointerPosition();
     if (!pos) return;
-    const x = Math.round(pos.x / this.k.resize.scale);
-    const y = Math.round(pos.y / this.k.resize.scale);
+    const x = Math.round(pos.x);
+    const y = Math.round(pos.y);
     if (this.applyWandAt(x, y)) this.wandCapturePending = true;
     this.wandLastAt = now2;
   }
@@ -13105,23 +13114,23 @@ var Paint = class {
     let pos1;
     this.k.stage.on("mousedown.text touchstart.text", () => {
       if (!isText) return;
-      pos0 = this.k.stage.getPointerPosition();
+      pos0 = this.getStagePointerPosition();
       pos1 = null;
     });
     this.k.stage.on("mouseup.text touchend.text", () => {
       if (!isText) return;
       const textVal = this.k.paint.textValue + " ";
       if (!textVal || textVal.trim() === "") return;
-      pos1 = this.k.stage.getPointerPosition();
+      pos1 = this.getStagePointerPosition();
       if (!pos0 || !pos1) return;
       this.k.toolbar.resetButtons();
       let fontSize = 4;
       const maxFontSize = 500;
       while (fontSize < maxFontSize) {
-        const x0 = Math.min(pos0.x, pos1.x) / this.k.resize.scale;
-        const y0 = Math.min(pos0.y, pos1.y) / this.k.resize.scale;
-        const x1 = Math.max(pos0.x, pos1.x) / this.k.resize.scale;
-        const y1 = Math.max(pos0.y, pos1.y) / this.k.resize.scale;
+        const x0 = Math.min(pos0.x, pos1.x);
+        const y0 = Math.min(pos0.y, pos1.y);
+        const x1 = Math.max(pos0.x, pos1.x);
+        const y1 = Math.max(pos0.y, pos1.y);
         const text = new lib_default.Text({
           x: x0,
           y: y0,
@@ -13600,11 +13609,60 @@ var Shapes = class _Shapes {
     const labelName = nodeName ? ` ${nodeName}` : "";
     return `${nodeType}${labelName} ${width}x${height}`;
   }
+  createSelector(node) {
+    const item = document.createElement("div");
+    item.className = "kanvas-shapes-item";
+    item.setAttribute("role", "button");
+    item.tabIndex = 0;
+    const label = document.createElement("span");
+    label.className = "kanvas-shapes-item-label";
+    label.textContent = _Shapes.getNodeLabel(node);
+    const removeItem = document.createElement("span");
+    removeItem.className = "kanvas-shapes-item-remove";
+    removeItem.textContent = "x";
+    removeItem.title = `Remove ${_Shapes.getNodeLabel(node)}`;
+    removeItem.setAttribute("aria-label", `Remove ${_Shapes.getNodeLabel(node)}`);
+    const selectNode = async () => {
+      const layer = this.getActiveLayer();
+      const isValid = node.parent === this.getActiveGroup() || node.parent === layer;
+      if (!isValid) return false;
+      this.k.imageMode = "none";
+      await this.k.stopActions();
+      await this.k.toolbar.resetButtons();
+      await this.k.selectNode(node);
+      return true;
+    };
+    removeItem.addEventListener("click", async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.k.toolbar.btnRemove?.click();
+    });
+    item.appendChild(label);
+    item.appendChild(removeItem);
+    if (this.k.selected === node) item.classList.add("active");
+    item.addEventListener("click", async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.refresh();
+    });
+    item.addEventListener("keydown", async (evt) => {
+      if (evt.key !== "Enter" && evt.key !== " ") return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.refresh();
+    });
+    this.listEl?.appendChild(item);
+  }
   renderList() {
     if (!this.overlayEl || !this.titleEl || !this.listEl) return;
     this.k.stages.mountOverlay(this.overlayEl);
     this.k.stages.renderOverlay();
-    const layer = this.getActiveLayer();
     const nodes = this.getLayerNodes();
     this.titleEl.textContent = `Layer ${this.k.selectedLayer}: ${nodes.length} shapes`;
     this.overlayEl.classList.toggle("active", nodes.length > 0);
@@ -13614,9 +13672,7 @@ var Shapes = class _Shapes {
       this.overlayEl.classList.remove("overlay-collapsed");
     }
     const sizeBtn = document.getElementById(`${this.k.containerId}-button-size`);
-    if (sizeBtn) {
-      sizeBtn.title = this.k.helpers.isEmpty() ? "Create stage" : "Change stage resolution";
-    }
+    if (sizeBtn) sizeBtn.title = this.k.helpers.isEmpty() ? "Create stage" : "Change stage resolution";
     this.listEl.textContent = "";
     if (nodes.length === 0) {
       const emptyEl = document.createElement("div");
@@ -13625,25 +13681,7 @@ var Shapes = class _Shapes {
       this.listEl.appendChild(emptyEl);
       return;
     }
-    nodes.forEach((node) => {
-      const item = document.createElement("button");
-      item.type = "button";
-      item.className = "kanvas-shapes-item";
-      item.textContent = _Shapes.getNodeLabel(node);
-      if (this.k.selected === node) item.classList.add("active");
-      item.addEventListener("click", async (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-        const isValid = node.parent === this.getActiveGroup() || node.parent === layer;
-        if (!isValid) return;
-        this.k.imageMode = "none";
-        await this.k.stopActions();
-        await this.k.toolbar.resetButtons();
-        await this.k.selectNode(node);
-        this.refresh();
-      });
-      this.listEl?.appendChild(item);
-    });
+    nodes.forEach((node) => this.createSelector(node));
   }
   refresh() {
     this.k.stages.syncActiveLayerRefs();
@@ -13820,9 +13858,9 @@ var Stages = class _Stages {
       order.title = `Stage order: ${stage.order} out of ${stages2.length}`;
       alignRight.appendChild(order);
       const remove = document.createElement("span");
-      remove.className = "kanvas-button kanvas-stage-remove";
+      remove.className = "kanvas-shapes-item-remove";
       remove.title = `Delete ${stage.label}`;
-      remove.textContent = "\uF2D3";
+      remove.textContent = "x";
       remove.addEventListener("click", (evt) => {
         evt.preventDefault();
         evt.stopPropagation();

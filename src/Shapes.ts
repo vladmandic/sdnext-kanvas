@@ -200,11 +200,63 @@ export default class Shapes {
     return `${nodeType}${labelName} ${width}x${height}`;
   }
 
+  createSelector(node: Konva.Shape) {
+    const item = document.createElement('div');
+    item.className = 'kanvas-shapes-item';
+    item.setAttribute('role', 'button');
+    item.tabIndex = 0;
+    const label = document.createElement('span');
+    label.className = 'kanvas-shapes-item-label';
+    label.textContent = Shapes.getNodeLabel(node);
+
+    const removeItem = document.createElement('span');
+    removeItem.className = 'kanvas-shapes-item-remove';
+    removeItem.textContent = 'x';
+    removeItem.title = `Remove ${Shapes.getNodeLabel(node)}`;
+    removeItem.setAttribute('aria-label', `Remove ${Shapes.getNodeLabel(node)}`);
+    const selectNode = async () => {
+      const layer = this.getActiveLayer();
+      const isValid = node.parent === this.getActiveGroup() || node.parent === layer;
+      if (!isValid) return false;
+      this.k.imageMode = 'none';
+      await this.k.stopActions();
+      await this.k.toolbar.resetButtons();
+      await this.k.selectNode(node);
+      return true;
+    };
+    removeItem.addEventListener('click', async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.k.toolbar.btnRemove?.click();
+    });
+
+    item.appendChild(label);
+    item.appendChild(removeItem);
+    if (this.k.selected === node) item.classList.add('active');
+    item.addEventListener('click', async (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.refresh();
+    });
+    item.addEventListener('keydown', async (evt) => {
+      if (evt.key !== 'Enter' && evt.key !== ' ') return;
+      evt.preventDefault();
+      evt.stopPropagation();
+      const selected = await selectNode();
+      if (!selected) return;
+      this.refresh();
+    });
+    this.listEl?.appendChild(item);
+  }
+
   renderList() {
     if (!this.overlayEl || !this.titleEl || !this.listEl) return;
     this.k.stages.mountOverlay(this.overlayEl);
     this.k.stages.renderOverlay();
-    const layer = this.getActiveLayer();
     const nodes = this.getLayerNodes();
     this.titleEl.textContent = `Layer ${this.k.selectedLayer}: ${nodes.length} shapes`;
     this.overlayEl.classList.toggle('active', nodes.length > 0);
@@ -216,9 +268,7 @@ export default class Shapes {
     }
     // Update button-size title based on stage content
     const sizeBtn = document.getElementById(`${this.k.containerId}-button-size`);
-    if (sizeBtn) {
-      sizeBtn.title = this.k.helpers.isEmpty() ? 'Create stage' : 'Change stage resolution';
-    }
+    if (sizeBtn) sizeBtn.title = this.k.helpers.isEmpty() ? 'Create stage' : 'Change stage resolution';
     this.listEl.textContent = '';
 
     if (nodes.length === 0) {
@@ -229,25 +279,8 @@ export default class Shapes {
       return;
     }
 
-    nodes.forEach((node) => {
-      const item = document.createElement('button');
-      item.type = 'button';
-      item.className = 'kanvas-shapes-item';
-      item.textContent = Shapes.getNodeLabel(node);
-      if (this.k.selected === node) item.classList.add('active');
-      item.addEventListener('click', async (evt) => {
-        evt.preventDefault();
-        evt.stopPropagation();
-        const isValid = node.parent === this.getActiveGroup() || node.parent === layer;
-        if (!isValid) return;
-        this.k.imageMode = 'none';
-        await this.k.stopActions();
-        await this.k.toolbar.resetButtons();
-        await this.k.selectNode(node);
-        this.refresh();
-      });
-      this.listEl?.appendChild(item);
-    });
+    // create button selectors for each node in the active layer
+    nodes.forEach((node) => this.createSelector(node));
   }
 
   refresh() {
