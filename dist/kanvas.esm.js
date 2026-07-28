@@ -14333,7 +14333,7 @@ var Kanvas = class {
     this.shapes = new Shapes(this);
     this.footer = new Footer(this);
     this.log = this.helpers.kanvasLog;
-    if (this.initial) this.log(`konva=${lib_default.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
+    if (this.initial) this.log({ konva: lib_default.version, width: this.stage.width(), height: this.stage.height(), id: this.containerId });
     this.controls = document.getElementById(`${this.containerId}-active-controls`);
     this.initial = false;
     this.helpers.bindEvents();

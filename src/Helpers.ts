@@ -15,7 +15,7 @@ export default class Helpers {
     return images === 0;
   }
 
-  async kanvasLog(message: string) { // eslint-disable-line class-methods-use-this
+  async kanvasLog(message: string | any) { // eslint-disable-line class-methods-use-this
     // @ts-ignore
     if (typeof log !== 'undefined') log('Kanvas:', message);
     else console.log('Kanvas:', message);

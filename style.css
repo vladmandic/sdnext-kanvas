@@ -35,7 +35,6 @@
 }
 
 .kanvas-toolbar {
-  font-size: var(--kanvas-size);
   line-height: calc(2 * var(--kanvas-size));
   vertical-align: middle;
   opacity: 0;
@@ -48,6 +47,10 @@
   border-radius: var(--kanvas-radius);
   transition: opacity 0.1s ease-in, background-color 0.1s ease-in;
   background-color: unset;
+}
+
+.kanvas-toolbar span {
+  font-size: var(--kanvas-size);
 }
 
 .kanvas-toolbar.active {
