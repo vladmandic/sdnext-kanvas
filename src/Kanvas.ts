@@ -15,7 +15,7 @@ import History from './History';
 
 export default class Kanvas {
   initial = true;
-  log: (message: string) => void;
+  log: (message: string | any) => void;
   // elements
   containerId: string;
   wrapper: HTMLDivElement;
@@ -129,7 +129,7 @@ export default class Kanvas {
     this.log = this.helpers.kanvasLog; // expose log function
 
     // log first init
-    if (this.initial) this.log(`konva=${Konva.version} width=${this.stage.width()} height=${this.stage.height()} id="${this.containerId}"`);
+    if (this.initial) this.log({ konva: Konva.version, width: this.stage.width(), height: this.stage.height(), id: this.containerId });
     this.controls = document.getElementById(`${this.containerId}-active-controls`) as HTMLSpanElement;
     this.initial = false;
 
