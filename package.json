@@ -2,11 +2,14 @@
   "name": "@vladmandic/kanvas",
   "version": "0.0.1",
   "description": "SD.Next Kanvas",
+  "private": true,
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
+  "main": "dist/kanvas.esm.js",
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "build": "pnpm lint && pnpm ts && pnpm prod",
+    "all": "pnpm lint && pnpm ts && pnpm prod",
     "dev": "build --profile development",
     "prod": "build --profile production",
     "lint": "eslint",
@@ -35,8 +38,8 @@
     "@html-eslint/eslint-plugin": "^0.60.0",
     "@types/node": "^25.9.0",
     "@vladmandic/build": "^0.10.3",
-    "esbuild": "^0.28.0",
-    "eslint": "^9.39.3",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.4",
     "eslint-config-airbnb-extended": "^3.1.0",
     "eslint-plugin-promise": "^7.3.0",
     "globals": "^17.6.0",
