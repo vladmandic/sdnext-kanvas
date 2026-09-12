@@ -1,12 +1,12 @@
 @font-face {
-  font-family: 'NotoSans';
-  src: url('assets/notosans-nerdfont-regular.ttf') format('truetype');
+  font-family: 'Ubuntu';
+  src: url('assets/ubuntu-nerdfont.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 :root {
-  --kanvas-font: 'NotoSans';
+  --kanvas-font: 'Ubuntu';
   --kanvas-radius: 0.25rem;
 }
 
