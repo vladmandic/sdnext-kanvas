@@ -11874,12 +11874,16 @@ var Helpers = class {
     else console.log("Kanvas:", message);
   }
   async showMessage(msg, duration = this.k.settings.settings.debounceMessage) {
-    this.kanvasLog(msg);
+    let txt = msg;
+    if (Array.isArray(msg)) txt = msg.join(" ");
+    this.kanvasLog(txt);
     const footerEl = document.getElementById(`${this.k.containerId}-footer`);
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
     if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
-    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + msg;
-    else msgEl.innerHTML = msg;
+    let line = msg;
+    if (Array.isArray(msg)) line = msg.join('<span class="kanvas-separator"> | </span>');
+    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + line;
+    else msgEl.innerHTML = line;
     msgEl.classList.add("active");
     footerEl.classList.add("active");
     if (debounceMessage) clearTimeout(debounceMessage);
@@ -11906,7 +11910,7 @@ var Helpers = class {
       const scale = e.evt.deltaY > 0 ? this.k.stage.scaleX() / 1.05 : this.k.stage.scaleX() * 1.05;
       this.k.stage.scale({ x: scale, y: scale });
       this.k.stage.batchDraw();
-      this.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.showMessage(["Scale", `${Math.round(scale * 100)}%`]);
     });
   }
   async bindEvents() {
@@ -12095,7 +12099,7 @@ var Toolbar = class {
       this.k.group = this.k.imageGroup;
       this.btnSelectImage?.classList.add("active");
       this.btnSelectMask?.classList.remove("active");
-      this.k.helpers.showMessage("Active layer: image");
+      this.k.helpers.showMessage(["Active layer", "image"]);
       this.k.shapes.refresh();
     });
     this.btnSelectMask?.addEventListener("click", async (e) => {
@@ -12106,7 +12110,7 @@ var Toolbar = class {
       this.k.group = this.k.maskGroup;
       this.btnSelectImage?.classList.remove("active");
       this.btnSelectMask?.classList.add("active");
-      this.k.helpers.showMessage("Active layer: mask");
+      this.k.helpers.showMessage(["Active layer", "mask"]);
       this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener("input", async (e) => {
@@ -12199,7 +12203,7 @@ var Toolbar = class {
         });
         image.name(`canvas-${width}x${height}`);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Created empty image: ${width} x ${height}`);
+        this.k.helpers.showMessage(["Created empty image", `width:${width} height:${height}`]);
         this.k.group.add(image);
         image.on("click", () => this.k.selectNode(image));
         this.k.resize.resizeStage(width, height);
@@ -12214,14 +12218,14 @@ var Toolbar = class {
       e.stopPropagation();
       const scale = this.k.stage.scaleX() * 1.1;
       this.k.stage.scale({ x: scale, y: scale });
-      this.k.helpers.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.k.helpers.showMessage(["Scale", `${Math.round(scale * 100)}%`]);
     });
     document.getElementById(`${this.k.containerId}-button-zoomout`)?.addEventListener("click", async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const scale = this.k.stage.scaleX() / 1.1;
       this.k.stage.scale({ x: scale, y: scale });
-      this.k.helpers.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.k.helpers.showMessage(["Scale", `${Math.round(scale * 100)}%`]);
     });
     document.getElementById(`${this.k.containerId}-button-zoomlock`)?.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -12503,7 +12507,7 @@ var Upload = class {
         image.name(fallbackName);
         if (this.k.selectedLayer === "image") this.k.stages.setStageLabelFromFileName(fallbackName);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage([`Pasted ${this.k.selectedLayer}`, fallbackName, `${image.width()} x ${image.height()}`]);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
@@ -12552,7 +12556,7 @@ var Upload = class {
         image.name(file.name);
         if (this.k.selectedLayer === "image") this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = "contents";
-        this.k.helpers.showMessage(`Load ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage([`Load ${this.k.selectedLayer}`, file.name, `${image.width()} x ${image.height()}`]);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
@@ -12672,11 +12676,11 @@ var Resize = class {
       if (box.width < width) this.k.stage.width(box.width);
       if (box.height < height) this.k.stage.height(box.height);
       for (const child of el.getChildren()) child.setPosition({ x: 0, y: 0 });
-      if (!quiet) this.k.helpers.showMessage(`Resize group: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(["Resize group", `x:${Math.round(box.x)}`, `y:${Math.round(box.y)}`, `width:${Math.round(box.width)}`, `height:${Math.round(box.height)}`]);
     } else if (box.x + box.width > this.k.stage.width() || box.y + box.height > this.k.stage.height()) {
       if (box.x + box.width > this.k.stage.width()) this.k.stage.width(box.x + box.width);
       if (box.y + box.height > this.k.stage.height()) this.k.stage.height(box.y + box.height);
-      if (!quiet) this.k.helpers.showMessage(`Resize image: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(["Resize image", `x:${Math.round(box.x)}`, `y:${Math.round(box.y)}`, `width:${Math.round(box.width)}`, `height:${Math.round(box.height)}`]);
     }
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
       const primary = document.querySelector(".konvajs-content canvas:first-of-type");
@@ -12695,7 +12699,7 @@ var Resize = class {
       this.k.stage.size({ width: x, height: y });
       this.k.stages.resizeActiveStageLayers(x, y);
       this.k.toolbar.el.style.maxWidth = `${x}px`;
-      if (!quiet) this.k.helpers.showMessage(`Stage: width:${width} height:${height} max:${this.k.settings.settings.maxSize}`);
+      if (!quiet) this.k.helpers.showMessage(["Stage", `width:${width}`, `height:${height}`, `max:${this.k.settings.settings.maxSize}`]);
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
@@ -12720,7 +12724,7 @@ var Resize = class {
     this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
     this.updateSizeInputs();
-    this.k.helpers.showMessage(`Stage resize: width:${width} height:${height}`);
+    this.k.helpers.showMessage(["Stage resize", `width:${width}`, `height:${height}`]);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
     clearTimeout(this.debounceHistory);
@@ -13147,7 +13151,7 @@ var Paint = class {
         });
         const textSize = text.measureSize(textVal);
         if (textSize.height >= y1 - y0 || textSize.width >= x1 - x0) {
-          this.k.helpers.showMessage(`Text: "${textVal}" size:${fontSize}`);
+          this.k.helpers.showMessage(["Text", textVal, `size:${fontSize}`]);
           this.k.group.add(text);
           text.on("click", () => this.k.selectNode(text));
           this.k.history.capture("Add text");
@@ -13304,7 +13308,7 @@ var Outpaint = class {
       return;
     }
     this.k.imageMode = "outpaint";
-    this.k.helpers.showMessage(`Outpaint blur:${this.outpaintBlur} expand:${this.outpaintExpand}`);
+    this.k.helpers.showMessage(["Outpaint", `blur:${this.outpaintBlur} expand:${this.outpaintExpand}`]);
     this.removeOutpaint();
     if (this.k.settings.settings.outpaintFill) this.fillOutpaint();
     const fillRect = new lib_default.Rect({
@@ -13360,7 +13364,7 @@ var Filter = class {
     if (this.k.selected && this.k.selected instanceof lib_default.Image) {
       const image = this.k.selected;
       image.cache();
-      this.k.helpers.showMessage(`Apply filter: ${this.filterName} value=${this.filterValue}`);
+      this.k.helpers.showMessage(["Apply filter", `${this.filterName} value=${this.filterValue}`]);
       if (this.filterName === "blur") {
         image.filters([lib_default.Filters.Blur]);
         image.blurRadius(this.filterValue / 4);
@@ -14116,7 +14120,7 @@ var History = class _History {
     this.future.push(this.current);
     this.current = previous;
     this.restoreWorkspace(previous);
-    this.k.helpers.showMessage(`Undo: ${actionLabel}`);
+    this.k.helpers.showMessage(["Undo", actionLabel]);
     this.updateToolbar();
   }
   redo() {
@@ -14126,7 +14130,7 @@ var History = class _History {
     this.past.push(this.current);
     this.current = next;
     this.restoreWorkspace(next);
-    this.k.helpers.showMessage(`Redo: ${actionLabel}`);
+    this.k.helpers.showMessage(["Redo", actionLabel]);
     this.updateToolbar();
   }
   static createGroupFromJSON(json) {
@@ -14171,7 +14175,7 @@ var History = class _History {
         this.k.stages.renderOverlay();
       };
       img.onerror = () => {
-        this.k.helpers.showMessage("History restore warning: unable to load one image source");
+        this.k.helpers.showMessage(["History restore warning", "unable to load one image source"]);
       };
       img.src = src;
     });

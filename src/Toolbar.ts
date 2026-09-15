@@ -190,7 +190,7 @@ export default class Toolbar {
       this.k.group = this.k.imageGroup;
       this.btnSelectImage?.classList.add('active');
       this.btnSelectMask?.classList.remove('active');
-      this.k.helpers.showMessage('Active layer: image');
+      this.k.helpers.showMessage(['Active layer', 'image']);
       this.k.shapes.refresh();
     });
     this.btnSelectMask?.addEventListener('click', async (e) => {
@@ -201,7 +201,7 @@ export default class Toolbar {
       this.k.group = this.k.maskGroup;
       this.btnSelectImage?.classList.remove('active');
       this.btnSelectMask?.classList.add('active');
-      this.k.helpers.showMessage('Active layer: mask');
+      this.k.helpers.showMessage(['Active layer', 'mask']);
       this.k.shapes.refresh();
     });
     document.getElementById(`${this.k.containerId}-image-opacity`)?.addEventListener('input', async (e) => {
@@ -302,7 +302,7 @@ export default class Toolbar {
         });
         image.name(`canvas-${width}x${height}`);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Created empty image: ${width} x ${height}`);
+        this.k.helpers.showMessage(['Created empty image', `width:${width} height:${height}`]);
         this.k.group.add(image);
         image.on('click', () => this.k.selectNode(image));
         this.k.resize.resizeStage(width, height);
@@ -320,14 +320,14 @@ export default class Toolbar {
       e.stopPropagation();
       const scale = this.k.stage.scaleX() * 1.1;
       this.k.stage.scale({ x: scale, y: scale });
-      this.k.helpers.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.k.helpers.showMessage(['Scale', `${Math.round(scale * 100)}%`]);
     });
     document.getElementById(`${this.k.containerId}-button-zoomout`)?.addEventListener('click', async (e) => {
       e.preventDefault();
       e.stopPropagation();
       const scale = this.k.stage.scaleX() / 1.1;
       this.k.stage.scale({ x: scale, y: scale });
-      this.k.helpers.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.k.helpers.showMessage(['Scale', `${Math.round(scale * 100)}%`]);
     });
     document.getElementById(`${this.k.containerId}-button-zoomlock`)?.addEventListener('click', async (e) => {
       e.preventDefault();

@@ -21,13 +21,17 @@ export default class Helpers {
     else console.log('Kanvas:', message);
   }
 
-  async showMessage(msg: string, duration = this.k.settings.settings.debounceMessage) {
-    this.kanvasLog(msg);
+  async showMessage(msg: string | string[], duration = this.k.settings.settings.debounceMessage) {
+    let txt = msg;
+    if (Array.isArray(msg)) txt = msg.join(' ');
+    this.kanvasLog(txt);
     const footerEl = document.getElementById(`${this.k.containerId}-footer`);
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
     if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
-    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + msg;
-    else msgEl.innerHTML = msg;
+    let line = msg;
+    if (Array.isArray(msg)) line = msg.join('<span class="kanvas-separator"> | </span>');
+    if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + line;
+    else msgEl.innerHTML = line;
     // msgEl.innerHTML = msg;
     msgEl.classList.add('active');
     footerEl.classList.add('active');
@@ -56,7 +60,7 @@ export default class Helpers {
       const scale = e.evt.deltaY > 0 ? this.k.stage.scaleX() / 1.05 : this.k.stage.scaleX() * 1.05;
       this.k.stage.scale({ x: scale, y: scale });
       this.k.stage.batchDraw();
-      this.showMessage(`Scale: ${Math.round(scale * 100)}%`);
+      this.showMessage(['Scale', `${Math.round(scale * 100)}%`]);
     });
   }
 
