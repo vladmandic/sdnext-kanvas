@@ -7,7 +7,7 @@
     "node": ">=24.0.0"
   },
   "main": "dist/kanvas.esm.js",
-  "packageManager": "pnpm@11.7.0",
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
     "all": "pnpm lint && pnpm ts && pnpm prod",
     "dev": "build --profile development",

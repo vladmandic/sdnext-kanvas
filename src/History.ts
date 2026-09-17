@@ -93,7 +93,7 @@ export default class History {
     this.future.push(this.current);
     this.current = previous;
     this.restoreWorkspace(previous);
-    this.k.helpers.showMessage(`Undo: ${actionLabel}`);
+    this.k.helpers.showMessage(['Undo', actionLabel]);
     this.updateToolbar();
   }
 
@@ -104,7 +104,7 @@ export default class History {
     this.past.push(this.current);
     this.current = next;
     this.restoreWorkspace(next);
-    this.k.helpers.showMessage(`Redo: ${actionLabel}`);
+    this.k.helpers.showMessage(['Redo', actionLabel]);
     this.updateToolbar();
   }
 
@@ -153,7 +153,7 @@ export default class History {
         this.k.stages.renderOverlay();
       };
       img.onerror = () => {
-        this.k.helpers.showMessage('History restore warning: unable to load one image source');
+        this.k.helpers.showMessage(['History restore warning', 'unable to load one image source']);
       };
       img.src = src;
     });

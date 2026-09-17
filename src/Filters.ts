@@ -14,7 +14,7 @@ export default class Filter {
     if (this.k.selected && this.k.selected instanceof Konva.Image) {
       const image = this.k.selected;
       image.cache();
-      this.k.helpers.showMessage(`Apply filter: ${this.filterName} value=${this.filterValue}`);
+      this.k.helpers.showMessage(['Apply filter', `${this.filterName} value=${this.filterValue}`]);
       if (this.filterName === 'blur') {
         image.filters([Konva.Filters.Blur]);
         image.blurRadius(this.filterValue / 4);

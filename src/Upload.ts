@@ -59,7 +59,7 @@ export default class Upload {
         image.name(fallbackName);
         if (this.k.selectedLayer === 'image') this.k.stages.setStageLabelFromFileName(fallbackName);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Pasted ${this.k.selectedLayer}: ${fallbackName} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage([`Pasted ${this.k.selectedLayer}`, fallbackName, `${image.width()} x ${image.height()}`]);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);
@@ -113,7 +113,7 @@ export default class Upload {
         image.name(file.name);
         if (this.k.selectedLayer === 'image') this.k.stages.setStageLabelFromFileName(file.name);
         this.k.controls.style.display = 'contents';
-        this.k.helpers.showMessage(`Load ${this.k.selectedLayer}: ${file.name} ${image.width()} x ${image.height()}`);
+        this.k.helpers.showMessage([`Load ${this.k.selectedLayer}`, file.name, `${image.width()} x ${image.height()}`]);
         URL.revokeObjectURL(url);
         if (this.k.helpers.isEmpty()) await this.setStageResolutionToImage(image);
         this.k.group.add(image);

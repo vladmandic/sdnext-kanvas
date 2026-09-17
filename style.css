@@ -1,12 +1,12 @@
 @font-face {
-  font-family: 'NotoSans';
-  src: url('assets/notosans-nerdfont-regular.ttf') format('truetype');
+  font-family: 'Ubuntu';
+  src: url('assets/ubuntu-nerdfont.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
 
 :root {
-  --kanvas-font: 'NotoSans';
+  --kanvas-font: 'Ubuntu';
   --kanvas-radius: 0.25rem;
 }
 
@@ -35,7 +35,7 @@
 }
 
 .kanvas-toolbar {
-  line-height: calc(2 * var(--kanvas-size));
+  line-height: calc(1.4 * var(--kanvas-size));
   vertical-align: middle;
   opacity: 0;
   background-color: black;
@@ -49,8 +49,8 @@
   background-color: unset;
 }
 
-.kanvas-toolbar span {
-  font-size: var(--kanvas-size);
+.kanvas-toolbar span, .kanvas-toolbar div {
+  font-size: calc(1.2 * var(--font-size));
 }
 
 .kanvas-toolbar.active {
@@ -58,8 +58,8 @@
 }
 
 .kanvas-footer.active {
-  min-height: calc(1.8 * var(--kanvas-size));
-  max-height: calc(1.8 * var(--kanvas-size));
+  min-height: calc(2.0 * var(--font-size));
+  max-height: calc(2.4 * var(--font-size));
 }
 
 .kanvas-footer {
@@ -69,6 +69,10 @@
   width: 100%;
   height: unset;
   overflow: hidden;
+}
+
+.kanvas-footer span {
+  font-size: var(--font-size);
 }
 
 .kanvas-overlay {
@@ -419,14 +423,12 @@
 }
 
 .kanvas-separator {
-  opacity: 0.3;
-  font-size: calc(1.1 * var(--kanvas-size));
+  opacity: 0.8;
   position: relative;
-  vertical-align: top;
-  line-height: 1.6em;
-  margin-right: -0.25rem;
+  vertical-align: initial;
   cursor: pointer;
   filter: blur(1px) !important;
+  color: var(--sd-main-accent-color);
 }
 
 .kanvas-section {
@@ -453,12 +455,15 @@
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .kanvas-toolbar .kanvas-button:hover {
-  color: hsl(var(--kanvas-color), 0%, 96%);
-  text-shadow: 0 0.0625em 0 hsla(var(--kanvas-color), 0%, 100%, 0.08), 0 -0.0625em 0 hsla(var(--kanvas-color), 0%, 0%, 0.5), 0 0 0.625em hsla(var(--kanvas-color), 55%, 75%, 0.16);
-  filter: saturate(1.08);
+  transform: translateY(-2px);
+  background-image: radial-gradient(var(--sd-button-hover-color), transparent 200%);
+  background-clip: border-box;
+  -webkit-background-clip: border-box;
+  -webkit-text-fill-color: var(--sd-label-color);
 }
 
 .kanvas-toolbar .kanvas-button.active {
@@ -500,6 +505,7 @@
   max-height: calc(0.6 * var(--kanvas-size));
 }
 
+<!-- Webkit slider thumb styles
 .kanvas-slider::-webkit-slider-thumb {
   height: calc(0.6 * var(--kanvas-size));
   width: calc(0.8 * var(--kanvas-size));
@@ -530,6 +536,7 @@
 .kanvas-slider::after {
   display: none;
 }
+-->
 
 .kanvas-select {
   background: transparent;

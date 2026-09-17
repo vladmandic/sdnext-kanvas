@@ -86,11 +86,11 @@ export default class Resize {
       if (box.width < width) this.k.stage.width(box.width);
       if (box.height < height) this.k.stage.height(box.height);
       for (const child of el.getChildren()) child.setPosition({ x: 0, y: 0 });
-      if (!quiet) this.k.helpers.showMessage(`Resize group: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(['Resize group', `x:${Math.round(box.x)}`, `y:${Math.round(box.y)}`, `width:${Math.round(box.width)}`, `height:${Math.round(box.height)}`]);
     } else if (box.x + box.width > this.k.stage.width() || box.y + box.height > this.k.stage.height()) {
       if (box.x + box.width > this.k.stage.width()) this.k.stage.width(box.x + box.width);
       if (box.y + box.height > this.k.stage.height()) this.k.stage.height(box.y + box.height);
-      if (!quiet) this.k.helpers.showMessage(`Resize image: x:${Math.round(box.x)} y:${Math.round(box.y)} width:${Math.round(box.width)} height:${Math.round(box.height)}`);
+      if (!quiet) this.k.helpers.showMessage(['Resize image', `x:${Math.round(box.x)}`, `y:${Math.round(box.y)}`, `width:${Math.round(box.width)}`, `height:${Math.round(box.height)}`]);
     }
     // resizing layers and toolbar
     if (width !== this.k.stage.width() || height !== this.k.stage.height()) {
@@ -111,7 +111,7 @@ export default class Resize {
       this.k.stage.size({ width: x, height: y });
       this.k.stages.resizeActiveStageLayers(x, y);
       this.k.toolbar.el.style.maxWidth = `${x}px`;
-      if (!quiet) this.k.helpers.showMessage(`Stage: width:${width} height:${height} max:${this.k.settings.settings.maxSize}`);
+      if (!quiet) this.k.helpers.showMessage(['Stage', `width:${width}`, `height:${height}`, `max:${this.k.settings.settings.maxSize}`]);
       this.updateSizeInputs();
       this.fitStage();
       this.k.stages.renderOverlay();
@@ -139,7 +139,7 @@ export default class Resize {
     this.k.stages.syncActiveLayerRefs();
     this.k.toolbar.el.style.maxWidth = `${this.k.stage.width()}px`;
     this.updateSizeInputs();
-    this.k.helpers.showMessage(`Stage resize: width:${width} height:${height}`);
+    this.k.helpers.showMessage(['Stage resize', `width:${width}`, `height:${height}`]);
     this.k.stages.renderOverlay();
     this.k.resize.fitStage();
     clearTimeout(this.debounceHistory);
