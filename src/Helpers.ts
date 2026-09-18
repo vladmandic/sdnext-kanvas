@@ -29,7 +29,7 @@ export default class Helpers {
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
     if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
     let line = msg;
-    if (Array.isArray(msg)) line = msg.join('<span class="kanvas-separator"> | </span>');
+    if (Array.isArray(line)) line = line.join('<span class="kanvas-separator"> | </span>');
     if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + line;
     else msgEl.innerHTML = line;
     // msgEl.innerHTML = msg;
