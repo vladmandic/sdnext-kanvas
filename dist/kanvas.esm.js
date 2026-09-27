@@ -11881,7 +11881,7 @@ var Helpers = class {
     const msgEl = document.getElementById(`${this.k.containerId}-message`);
     if (!footerEl || !msgEl || !this.k.settings.settings.messageShow) return;
     let line = msg;
-    if (Array.isArray(msg)) line = msg.join('<span class="kanvas-separator"> | </span>');
+    if (Array.isArray(line)) line = line.join('<span class="kanvas-separator"> | </span>');
     if (debounceMessage) msgEl.innerHTML += '<span class="kanvas-separator"> | </span>' + line;
     else msgEl.innerHTML = line;
     msgEl.classList.add("active");
@@ -14366,10 +14366,10 @@ var Kanvas = class {
     this.pan.moving = false;
     this.selected = node;
     const nodeType = this.selected.getClassName();
-    if (nodeType === "Image") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} x:${Math.round(this.selected.x())} y:${Math.round(this.selected.y())} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
-    else if (nodeType === "Line") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} points:${this.selected.points().length / 2}`);
-    else if (nodeType === "Text") this.helpers.showMessage(`Selected: ${nodeType}/${this.selectedLayer} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`);
-    else this.helpers.showMessage(`Selected: ${nodeType}`);
+    if (nodeType === "Image") this.helpers.showMessage(["Selected", `${nodeType}/${this.selectedLayer} x:${Math.round(this.selected.x())} y:${Math.round(this.selected.y())} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`]);
+    else if (nodeType === "Line") this.helpers.showMessage(["Selected", `${nodeType}/${this.selectedLayer} points:${this.selected.points().length / 2}`]);
+    else if (nodeType === "Text") this.helpers.showMessage(["Selected", `${nodeType}/${this.selectedLayer} width:${Math.round(this.selected.width())} height:${Math.round(this.selected.height())}`]);
+    else this.helpers.showMessage(["Selected", nodeType]);
     this.layer.find("Transformer").forEach((t) => t.destroy());
     if (nodeType !== "Image") {
       node.draggable(true);
@@ -14398,7 +14398,7 @@ var Kanvas = class {
       if (shape instanceof lib_default.Transformer && shape.nodes().includes(node)) shape.destroy();
     }
     this.layer.draw();
-    this.helpers.showMessage(`Node removed: ${nodeType}`);
+    this.helpers.showMessage(["Node removed", nodeType]);
     this.shapes.refresh();
     this.history.capture(`Remove ${nodeType}`);
   }
@@ -14418,7 +14418,7 @@ var Kanvas = class {
       this.imageGroup.add(img);
       this.controls.style.display = "inline";
       this.toolbar.show();
-      this.helpers.showMessage(`Image added: ${Math.round(img.width())}x${Math.round(img.height())}`);
+      this.helpers.showMessage(["Image added", `${Math.round(img.width())}x${Math.round(img.height())}`]);
       this.resize.resizeStageToFit(img, true);
       this.history.capture("Add image");
     };
