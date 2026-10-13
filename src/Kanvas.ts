@@ -72,7 +72,7 @@ export default class Kanvas {
       width: defaultWidth,
       height: defaultHeight,
     });
-    this.stages.initializeLayers(defaultWidth, defaultHeight);
+    this.stages.initializeLayers();
     this.stages.createStage('Stage 1');
     if (this.controls) this.controls.style.display = 'none';
     if (this.helpers) this.helpers.bindStage();
