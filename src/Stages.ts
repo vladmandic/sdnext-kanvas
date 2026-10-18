@@ -30,12 +30,10 @@ export default class Stages {
     this.k = k;
   }
 
-  initializeLayers(width: number, height: number) {
+  initializeLayers() {
     this.k.imageLayer = new Konva.Layer();
     this.k.maskLayer = new Konva.Layer();
     this.k.maskLayer.opacity(0.5);
-    this.k.imageLayer.size({ width, height });
-    this.k.maskLayer.size({ width, height });
     this.k.stage.add(this.k.imageLayer);
     this.k.stage.add(this.k.maskLayer);
   }
@@ -260,8 +258,6 @@ export default class Stages {
     this.bindThumbnailListeners();
     const nextWidth = Math.max(1, Math.round(next.width));
     const nextHeight = Math.max(1, Math.round(next.height));
-    this.k.imageLayer.size({ width: nextWidth, height: nextHeight });
-    this.k.maskLayer.size({ width: nextWidth, height: nextHeight });
     this.k.stage.size({ width: nextWidth, height: nextHeight });
     if (this.k.toolbar) this.k.toolbar.el.style.maxWidth = `${nextWidth}px`;
     this.k.resize?.updateSizeInputs?.();
@@ -393,7 +389,5 @@ export default class Stages {
     if (!active) return;
     active.width = width;
     active.height = height;
-    this.k.imageLayer.size({ width, height });
-    this.k.maskLayer.size({ width, height });
   }
 }

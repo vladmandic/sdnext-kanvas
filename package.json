@@ -7,7 +7,7 @@
     "node": ">=24.0.0"
   },
   "main": "dist/kanvas.esm.js",
-  "packageManager": "pnpm@11.24.0",
+  "packageManager": "pnpm@12.11.2",
   "scripts": {
     "all": "pnpm lint && pnpm ts && pnpm prod",
     "dev": "build --profile development",
@@ -28,23 +28,23 @@
   "keywords": [],
   "type": "module",
   "dependencies": {
-    "konva": "^10.3.0"
+    "konva": "^10.7.1"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.1.0",
-    "@eslint/css": "^1.2.0",
-    "@eslint/js": "^9.39.4",
+    "@eslint/compat": "^2.1.1",
+    "@eslint/css": "^1.4.0",
+    "@eslint/js": "^9.39.5",
     "@eslint/json": "^1.2.0",
     "@html-eslint/eslint-plugin": "^0.60.0",
-    "@types/node": "^25.9.0",
+    "@types/node": "^25.9.9",
     "@vladmandic/build": "^0.10.3",
     "esbuild": "^0.28.2",
-    "eslint": "^9.39.4",
-    "eslint-config-airbnb-extended": "^3.1.0",
+    "eslint": "^9.39.5",
+    "eslint-config-airbnb-extended": "^3.3.0",
     "eslint-plugin-promise": "^7.3.0",
-    "globals": "^17.6.0",
+    "globals": "^17.13.0",
     "tslib": "^2.8.1",
-    "typedoc": "^0.28.19",
+    "typedoc": "^0.28.20",
     "typescript": "^6.0.3"
   }
 }
